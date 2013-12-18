@@ -5,9 +5,10 @@
 class conner
 {
 public:
-    conner(int _x , int _y ,int _ctype):
+    conner():x(0),y(0),ctype(0){}
+    conner(int _x , int _y ,int _ctype=0):
         x(_x),y(_y),c(_ctype){}
-    int getx()
+    int getx();
         {            return x;       }
     int gety();
         {            return y;       }
@@ -20,15 +21,44 @@ private:
     int y;
     int ctype;
 };
+        
 
 class rectangle
 {
 public:
+    conner left_bottle;
+    
+    conner right_top;
+    rectangle():left_bottle(),right_top(){    }
+    rectangle(const conner & _left_bottle, const conner & right_top )
+        :left_bottle(_left_bottle),right_top(_right_top){    }
+    rectangle(int _lb_x, int _lb_y,int _rt_x, int _rt_y )
+        :left_bottle(_lb_x,_lby_y),right_top(_rtx,_rty){}
+    
+};
+        
+class action_space :public rectangle
+{
+public:
+    int as_type;
+        
+};
+
+
+// 判断两个矩形是否冲突
+class rectangle_conflict
+{
+public:
+    void operator()(action_space & ac_space);
+    void set_rectangle(int _lb_x, int _lb_y,int _rt_x, int _rt_y );
     
 private:
-    conner left_bottle;
-    conner right_top;
-}
+    rectangle rec_block;
+    
+};
+
+    
+    
 
 /* 水平线 */
 class Hline

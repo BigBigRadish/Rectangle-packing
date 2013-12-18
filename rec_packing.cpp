@@ -96,5 +96,13 @@ void update_lb_line(const lbiterator & hline)
 }
 
 
+void rec_conflict::operator() (action_space & ac_space)
+{
+    
+        
+}
 
-
+void rec_conflict::set_rectangle(int _lb_x, int _lb_y,int _rt_x, int _rt_y )
+{
+    rec_block.
+}

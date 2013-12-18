@@ -2,13 +2,33 @@
 #define REC_PACKING_H
 
 // 顶点
-struct Conner
+class conner
 {
+public:
+    conner(int _x , int _y ,int _ctype):
+        x(_x),y(_y),c(_ctype){}
+    int getx()
+        {            return x;       }
+    int gety();
+        {            return y;       }
+    void setx(int _x)
+        {            x = _x;        }
+    void sety(int _y)
+        {            y = _y;        }
+private:
     int x;
     int y;
-    int c_type;
-    
+    int ctype;
 };
+
+class rectangle
+{
+public:
+    
+private:
+    conner left_bottle;
+    conner right_top;
+}
 
 /* 水平线 */
 class Hline
@@ -51,7 +71,7 @@ public:
     
 // };
 
-class Rec_space
+class rectangle
 {
 public:
     Conner left_bottle;

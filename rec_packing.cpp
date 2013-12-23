@@ -95,6 +95,33 @@ void update_lb_line(const lbiterator & hline)
     
 }
 
+void conner::set_conner(int _x, int _y)
+{
+    x = _x;
+    y = _y;
+}
+
+void conner::update_conner_type(const vector<rectangle> & vec_rec)
+{
+    vector<rectangle>::it;
+    for (it = vec_rec.begin(); it != vec_rec.end() ;it++)
+    {
+        if((x <= it->left_bottle.x + it->width )
+           && ( y<= it->left_bottle.y+ it->height) )
+        {
+            ctype = 1;
+            break;
+        }
+    }
+        
+}
+
+void rectangle:: set_rectangle(int _lb_x, int _lb_y,int _width, int _height )
+{
+    left_bottle.set_conner(_lb_x,_lb_y);
+    width = _width;
+    height = _height;
+}
 
 void rec_conflict::operator() (action_space & ac_space)
 {
@@ -102,7 +129,7 @@ void rec_conflict::operator() (action_space & ac_space)
         
 }
 
-void rec_conflict::set_rectangle(int _lb_x, int _lb_y,int _rt_x, int _rt_y )
+void rec_conflict::set_rectangle(int _lb_x, int _lb_y,int _width, int _height )
 {
-    rec_block.
+    rec_block.set_rectangle(_lb_x,_lb_y,_width,_height);
 }

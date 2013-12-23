@@ -1,6 +1,6 @@
 #ifndef REC_PACKING_H
 #define REC_PACKING_H
-
+#include <vector>
 // 顶点
 class conner
 {
@@ -8,17 +8,13 @@ public:
     conner():x(0),y(0),ctype(0){}
     conner(int _x , int _y ,int _ctype=0):
         x(_x),y(_y),c(_ctype){}
-    int getx();
-        {            return x;       }
-    int gety();
-        {            return y;       }
-    void setx(int _x)
-        {            x = _x;        }
-    void sety(int _y)
-        {            y = _y;        }
-private:
+    void set_conner(int _x ,int _y);
+
+    // 更新角的类型
+    void update_conner_type(const vector<rectangle> & vec_rec);
     int x;
     int y;
+    // ctype = 1 实角 ; ctype = 0 虚角
     int ctype;
 };
         
@@ -27,14 +23,14 @@ class rectangle
 {
 public:
     conner left_bottle;
-    
-    conner right_top;
+    int width;
+    int height;
     rectangle():left_bottle(),right_top(){    }
     rectangle(const conner & _left_bottle, const conner & right_top )
         :left_bottle(_left_bottle),right_top(_right_top){    }
     rectangle(int _lb_x, int _lb_y,int _rt_x, int _rt_y )
         :left_bottle(_lb_x,_lby_y),right_top(_rtx,_rty){}
-    
+    void set_rectangle(int _lb_x, int _lb_y, int _width,int _height);
 };
         
 class action_space :public rectangle
@@ -49,9 +45,12 @@ public:
 class rectangle_conflict
 {
 public:
+    rectangle_conflict(const conner & _left_bottle,int _width,int _height)
+        :left_bottle(_left_bottle),width(_width),height(_height) {}
+
+    // 判断动作空间 ac_space 是否和 矩形块 rec_block 有重叠
     void operator()(action_space & ac_space);
-    void set_rectangle(int _lb_x, int _lb_y,int _rt_x, int _rt_y );
-    
+    void set_rectangle(int _lb_x, int _lb_y, int _width,int _height);
 private:
     rectangle rec_block;
     
@@ -109,11 +108,6 @@ public:
     
 };
 
-class rec_conflict
-{
-public:
-    
-}
 
 
      

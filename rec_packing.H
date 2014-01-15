@@ -5,7 +5,7 @@
 class conner
 {
 public:
-    conner():x(0),y(0),ctype(0){}
+    conner():x(0),y(0),is_valid(0){}
     conner(int _x , int _y ,int _ctype=0):
         x(_x),y(_y),c(_ctype){}
     void set_conner(int _x ,int _y);
@@ -14,8 +14,8 @@ public:
     void update_conner_type(const vector<rectangle> & vec_rec);
     int x;
     int y;
-    // ctype = 1 实角 ; ctype = 0 虚角
-    int ctype;
+    // is_valid = 1 实角 ; ctype = 0 虚角
+    bool is_valid;
 };
         
 
@@ -23,13 +23,20 @@ class rectangle
 {
 public:
     conner left_bottle;
-    int width;
-    int height;
+    conner right_top;
+    int get_width()
+        {   return right_top.x - left_bottle.x;        }
+    int get_height()
+        {   return right_top.y - left_bottle.y;        }
+    
     rectangle():left_bottle(),right_top(){    }
+
     rectangle(const conner & _left_bottle, const conner & right_top )
         :left_bottle(_left_bottle),right_top(_right_top){    }
+
     rectangle(int _lb_x, int _lb_y,int _rt_x, int _rt_y )
         :left_bottle(_lb_x,_lby_y),right_top(_rtx,_rty){}
+
     void set_rectangle(int _lb_x, int _lb_y, int _width,int _height);
 };
         
@@ -37,7 +44,7 @@ class action_space :public rectangle
 {
 public:
     int as_type;
-        
+    bool is_conflict;
 };
 
 
@@ -103,8 +110,8 @@ public:
 class rectangle
 {
 public:
-    Conner left_bottle;
-    Conner right_top;
+    conner left_bottle;
+    conner right_top;
     
 };
 

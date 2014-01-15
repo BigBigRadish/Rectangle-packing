@@ -9,7 +9,7 @@
 #include <iostream>
 #include <set>
 #include <vector>
-
+#include <algorithm>
 #include "rec_packing.H"
 
 using namespace std;
@@ -101,33 +101,62 @@ void conner::set_conner(int _x, int _y)
     y = _y;
 }
 
-void conner::update_conner_type(const vector<rectangle> & vec_rec)
+void conner::update_conner_type(const rectangle& _rec_block)
 {
-    vector<rectangle>::it;
-    for (it = vec_rec.begin(); it != vec_rec.end() ;it++)
+    // 动作空间的角被放入的新矩形块 _rec 覆盖
+    if((x <= _rec_block.x + _rec_block.width )
+       && ( y<= _rec_block.y+ _rec_block.height) )
     {
-        if((x <= it->left_bottle.x + it->width )
-           && ( y<= it->left_bottle.y+ it->height) )
-        {
-            ctype = 1;
-            break;
-        }
+        ctype = 1;
+        break;
     }
-        
 }
 
+// begin class conner
+
+void conner::update_conner_type(const rectangle& _rec_block)
+{
+    // 动作空间的角被放入的新矩形块 _rec 覆盖
+    if((x <= _rec_block.x + _rec_block.width )
+       && ( y<= _rec_block.y+ _rec_block.height) )
+    {
+        is_valid = 1;
+        break;
+    }
+}
+
+// end class conner
+
+
+// begin class rectangle
 void rectangle:: set_rectangle(int _lb_x, int _lb_y,int _width, int _height )
 {
-    left_bottle.set_conner(_lb_x,_lb_y);
-    width = _width;
-    height = _height;
+    left_bottle.x = _lb_x;
+    left_bottle.y = _lb_y;
+    right_top.x = _lb_x + _width;
+    right_top.y = _lb_y + _height;
 }
+
+
+// end class rectangle
+
+
+// begin class rec_cinflict 
 
 void rec_conflict::operator() (action_space & ac_space)
 {
-    
-        
+    int minx = max(ac_space.left_bottle.x , rec_block.left_bottle.x);
+    int maxx = min(ac_space.right_top.x , rec_block.right_top.x );
+    int miny = max(ac_space.left_bottle.y, rec_block.left_bottle.y);
+    int maxy = min(ac_space.right_top.y , rec_block.right_top.y);
+
+    if( minx >= maxx || miny >= maxy)// not conflict
+        ac_space.is_conflict = 0;
+    else                          // action space ac_space conflict 
+        ac_space.is_conflict = 1; // with rec_block                 
 }
+
+
 
 void rec_conflict::set_rectangle(int _lb_x, int _lb_y,int _width, int _height )
 {

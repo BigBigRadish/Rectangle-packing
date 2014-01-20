@@ -7,15 +7,21 @@ class conner
 public:
     conner():x(0),y(0),is_valid(0){}
     conner(int _x , int _y ,int _ctype=0):
-        x(_x),y(_y),c(_ctype){}
+        x(_x),y(_y),is_valid(_ctype){}
     void set_conner(int _x ,int _y);
 
     // 更新角的类型
     void update_conner_type(const vector<rectangle> & vec_rec);
+
+    // 判断点是否在举行rec内部
+    bool is_belong2rec(const rectangle & rec);
+    
     int x;
     int y;
     // is_valid = 1 实角 ; ctype = 0 虚角
     bool is_valid;
+    char conner_type; // 0:left_top; 1:right_top ; 2: left_bottle; 3:right_bottle;
+    
 };
         
 

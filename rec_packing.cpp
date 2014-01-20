@@ -125,6 +125,14 @@ void conner::update_conner_type(const rectangle& _rec_block)
     }
 }
 
+bool conner:: is_belong2rec(const rectangle & rec)
+{
+    if( x < rec.left_bottle.x || y < rec.left_bottle.y
+        || x > rec.right_top.x || y > rec.right_top.y)
+        return 0;
+    return 1;
+}
+
 // end class conner
 
 

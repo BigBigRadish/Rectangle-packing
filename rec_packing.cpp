@@ -43,9 +43,6 @@ int main(int arg ,char *arv[])
     ltset.insert(l1);
     Hline l2(1,1,1);
     ltset.insert(l2);
-
-    
-    
     
 }
 
@@ -170,3 +167,37 @@ void rec_conflict::set_rectangle(int _lb_x, int _lb_y,int _width, int _height )
 {
     rec_block.set_rectangle(_lb_x,_lb_y,_width,_height);
 }
+
+
+
+// begin Hline
+bool Hline::conflict(const Hline & _hline)
+{
+    if(get_y() != _hline.get_y())
+        return 0;
+    int max_x = max(get_rightx(),_hline.get_rightx());
+    int min_x = min(get_leftx(),_hline.get_leftx());
+    if(max_x - min_x < get_length() + _hline.get_length()) // 说明有重叠
+        return 1;
+    return 0;
+}
+
+// end Hline
+
+
+// begin Vline
+bool Vline:: conflict(const Vline & _vline)
+{
+    if(get_x() != _vline.get_x())
+        return 0;
+    int max_y = max(get_topy(),_vline.get_topy() );
+    int min_y = min(get_bottley(), _vline.get_bottley() );
+    if (max_y - min_y < get_length() + _vline.get_length() )
+        return 1;
+    return 0;
+    
+}
+
+
+// end Vline
+

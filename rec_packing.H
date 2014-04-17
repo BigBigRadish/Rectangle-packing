@@ -2,6 +2,12 @@
 #define REC_PACKING_H
 #include <vector>
 #include <algorithm>
+using namespace std;
+
+const int LEFT_BOTTLE 0 ;
+const int LEFT_TOP 1 ;
+const int RIGHT_TOP 2;
+const int RIGHT_BOTTLE 3;
 
 // 穴度
 class fit_degree
@@ -37,7 +43,7 @@ public:
             return 0;
         }
     int k; // 贴边数
-    int s; // 平整度
+    double s; // 平整度
     int p; // 它贴边数
     
 };
@@ -72,45 +78,79 @@ class rectangle
 {
 public:
     conner left_bottle; // 为了计算方便，把几个点都列出
-    conner right_top;
-    conner left_top;
-    conner right_bottle;
-    int width;
-    int height;
-    
+    int width; // 宽度
+    int height; // 高度
+    bool reverse_mode ; // 是否旋转：1 旋转; 0未选转
 
-    conner get_lefttop()
+    rectangle():left_bottle(),width(0),height(0),reverse_mode(0){    }
+
+    rectangle(const conner & _left_bottle, int _width, int _height )
+        :left_bottle(_left_bottle),width(_width),
+         height(_height),reverse_mode(0){    }
+    
+    rectangle(int _width, int _height )
+        :left_bottle(0,0),width(_width),height(_height),reverse_mode(0){    }
+
+    conner left_top()
         {
             return conner(left_bottle.x,left_bottle.y + height);
         }
 
-    conner get_righttop()
+    conner right_top()
         {
             return conner(left_bottle.x + width, left_bottle.y + height);
         }
 
-    conner get_rightbottle()
+    conner right_bottle()
         {
             return conner(left_bottle.x + width, left_bottle.y);
         }
+
+    // 从左下角设置左下角坐标
+    void set_ordinate_lb(const conner & _conner_lb)
+        {
+            left_bottle  = _conner;
+        }
+
+    // 从坐上角设置左下角坐标
+    void set_ordinate_lt(const conner & _conner_lt)
+        {
+            left_bottle.x  = _conner_lt.x;
+            left_bottle.y  = _conner_lt.y - height;
+        }
+
+    // 从右下角设置左下角坐标
+    void set_ordinate_rb(const conner & _conner_rb)
+        {
+            left_bottle.x  = _conner_rb.x - width;
+            left_bottle.y  = _conner_lt.y ;
+        }
+
+    // 从右上角设置左下角坐标
+    void set_ordinate_rt(const conner & _conner_rt)
+        {
+            left_bottle.x  = _conner_rb.x - width;
+            left_bottle.y  = _conner_lt.y - height;
+        }
+
+    // 长和宽反转
+    void rec_reverse()
+        {
+            swap(width,height);
+            reverse_mode = (reverse_mode + 1)%2;
+        }
     
-    int get_width() // 宽度
-        {   return right_top.x - left_bottle.x;        }
-    int get_height() // 高度
-        {   return right_top.y - left_bottle.y;        }
-    
-    rectangle():left_bottle(),right_top(){    }
 
-    rectangle(const conner & _left_bottle, const conner & right_top )
-        :left_bottle(_left_bottle),right_top(_right_top){    }
-
-    rectangle(int _lb_x, int _lb_y,int _rt_x, int _rt_y )
-        :left_bottle(_lb_x,_lby_y),right_top(_rtx,_rty){}
-
-    void set_rectangle(int _lb_x, int _lb_y, int _width,int _height);
+    void set_rectangle(int _lb_x, int _lb_y, int _width , int _height)
+        {
+            left_bottle.x = _lb_x;
+            left_bottle.y = _lb_y;
+            right_top.x = _lb_x + _width;
+            right_top.y = _lb_y + _height;
+        }
 
     double get_erea() // 面积
-        { return get_width() * get_height() ;}
+        { return width * height ;}
 
     // 穴度相等,比较其它：面积,长边长，矮边长，左下角x,y
     bool operator> (const rectangle & _rec)
@@ -148,7 +188,7 @@ public:
 class action_space :public rectangle
 {
 public:
-    int as_type; // 动作空间类型
+    int place_type; // 放置类型,-1表示还未放置
     bool is_conflict; // 是否被新放入的木块重叠
 };
 
@@ -255,7 +295,7 @@ public:
             return pt_top.x;
         }
     
-l    bool operator< (const Vline & _vline) const
+    bool operator< (const Vline & _vline) const
     {
         return get_x() < _vline.get_x() ? 1: 0 ;
     }
@@ -266,29 +306,6 @@ l    bool operator< (const Vline & _vline) const
 
     bool conflict(const Vline & _vline);
 
-};
-
-
-
-// class Vline
-// {
-// public:
-//     int y_top;
-//     int y_bottle;
-//     int x;
-//     Vline():
-//         {
-//         }
-    
-    
-// };
-
-class rectangle
-{
-public:
-    conner left_bottle;
-    conner right_top;
-    
 };
 
 

@@ -134,13 +134,7 @@ bool conner:: is_belong2rec(const rectangle & rec)
 
 
 // begin class rectangle
-void rectangle:: set_rectangle(int _lb_x, int _lb_y,int _width, int _height )
-{
-    left_bottle.x = _lb_x;
-    left_bottle.y = _lb_y;
-    right_top.x = _lb_x + _width;
-    right_top.y = _lb_y + _height;
-}
+
 
 
 // end class rectangle

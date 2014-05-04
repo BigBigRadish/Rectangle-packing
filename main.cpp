@@ -31,8 +31,9 @@ void update_line(vector<rectangle>::iterator i2chonse_rec);
 
 
 // 计算穴度
-bool calculate_fd(vector<rectangle>:: iterator i2rec,
-                  vector<action_space>::iterator i2as,
+// 确保不该边 i2rec 对应的值
+void calculate_fd(vector<rectangle>:: const_iterator i2rec,
+                  vector<action_space>::const_iterator i2as,
                   fit_degree & fd);
 
 
@@ -47,13 +48,17 @@ int main(int arg ,char *arv[])
 bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
                   vector<action_space>::iterator & i2chonse_as)
 {
+    if (g_v_rec_undo.size() == 0)
+        return false;
+    
     vector<rectangle>::iterator i2rec = g_v_rec_undo.begin();
     vector<action_space>::iterator i2as = g_v_as.begin();
     vector<rectangle>::iterator i2rec_chosen = g_v_rec_undo.begin();
     vector<action_space>::iterator i2as_chosen = g_v_as.begin();
 
+    rectangle rec_chosen = g_v_rec_undo[0];
     fit_degree fd;
-    fit_degree last_fd;
+    fit_degree max_fd ;
     bool finded = 0;
     
     for (; i2as!= g_v_as.end() ; i2rec++) // 迭代动作空间
@@ -63,20 +68,27 @@ bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
             if(!max_fd_of8values(i2rec,i2as,fd))
                 continue;
             finded = 1;
-            if(last_fd < fd || (fd == last_fd && *i2rec > *i2rec_chosen) )
+            if(max_fd < fd || (fd == max_fd && *i2rec > rec_chosen) )
             {
-                i2rec_chosen = i2rec;
+                rec_chosen = *i2rec ;  // 由于小方块在迭代过程中会被改变，所以保存当前最优解的值
+                                        // 坐标，放置方式等会改变
+                i2rec_chosen = i2rec; // 指向当前最优解的那个小方块
                 i2as_chosen = i2as ;
-                last_fd = fd;
+                max_fd = fd;
             }
         }
+    }
+    if (finded)
+    {
+        *i2rec_chosen  = rec_chosen ; // 将最优解的那个小方块设置为其最优值
+        i2as->place_type = i2rec_chosen->place_type;
     }
     return finded ;
 }
 
 // 计算贴边数
-int calculate_fd_k(vector<rectangle>::iterator i2rec,
-                          vector<action_space>::iterator i2as)
+int calculate_fd_k(vector<rectangle>::const_iterator i2rec,
+                          vector<action_space>::const_iterator i2as)
 {
     int fd_k = 0 ;
     if(i2rec->width == i2as->width )
@@ -92,8 +104,8 @@ int calculate_fd_k(vector<rectangle>::iterator i2rec,
 
 // 计算平整度
 // 没有采用剩余动作个数
-double calculate_fd_s(vector<rectangle>::iterator i2rec,
-                          vector<action_space>::iterator i2as)
+double calculate_fd_s(vector<rectangle>::const_iterator i2rec,
+                          vector<action_space>::const_iterator i2as)
 {
     double di = 0 ;
     di = min(i2as->get_width - i2rec->get_width,i2as->get_height - i2rec->get_height);
@@ -102,8 +114,8 @@ double calculate_fd_s(vector<rectangle>::iterator i2rec,
 
 
 // 计算它贴边数
-int  calculate_fd_p(vector<rectangle>::iterator i2rec,
-                          vector<action_space>::iterator i2as)
+int  calculate_fd_p(vector<rectangle>::const_iterator i2rec,
+                          vector<action_space>::const_iterator i2as)
 {
     int fd_p = 0;
     Hline top_line(i2rec->left_top(),i2rec->right_top());
@@ -134,8 +146,8 @@ int  calculate_fd_p(vector<rectangle>::iterator i2rec,
 
 
 // 计算当前放置下的fd
-void calculate_fd(vector<rectangle>:: iterator i2rec,
-                  vector<action_space>::iterator i2as,
+void calculate_fd(vector<rectangle>:: const_iterator i2rec,
+                  vector<action_space>::const_iterator i2as,
                   fit_degree & fd)
 {
     fd.k = calculate_fd_k(i2rec,i2as);
@@ -144,9 +156,10 @@ void calculate_fd(vector<rectangle>:: iterator i2rec,
 }
 
 // 求出木块 i2rec 在动作空间i2as的4个位置中最忧位置
+// 并且 i2rec 的值已经被更新
 // 4 个位置是因为没有旋转
-void  max_fd_of4values(vector<rectangle>:: iterator i2rec,
-            vector<action_space>::iterator i2as,
+void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
+            const vector<action_space>::iterator & i2as,
             fit_degree & fd)
 {
     fit_degree fd_max ; // 本动作空间针对当前木块目前最大的fd
@@ -169,7 +182,7 @@ void  max_fd_of4values(vector<rectangle>:: iterator i2rec,
     }
         
     // right bottle
-    rec_temp->set_ordinate_rb(i2as->right_bottle() );
+    i2rec->set_ordinate_rb(i2as->right_bottle() );
     calculate_fd(i2rec,i2as,fd);
     if (fd_max < fd || (fd_max == fd &&  rec_op < *i2rec ) )
     {
@@ -205,8 +218,8 @@ void  max_fd_of4values(vector<rectangle>:: iterator i2rec,
 
 // 计算小矩形在动作空间 i2as 四个角的fd，包括水平和垂直方向
 // 也即有4*2 个值选取
-bool max_fd_of8values(vector<rectangle>:: iterator i2rec,
-            vector<action_space>::iterator i2as,
+bool max_fd_of8values(const vector<rectangle>:: iterator & i2rec,
+                      const vector<action_space>::iterator & i2as,
             fit_degree & fd)
 {
     // 放不下,则直接返回false
@@ -217,13 +230,18 @@ bool max_fd_of8values(vector<rectangle>:: iterator i2rec,
     max_fd_of4values(i2rec , i2as, fd);
     i2rec->rec_reverse(); // 宽高互换
     fit_degree fd_reverse ;
+    rectangle rec_un_reverse(*i2rec);
     max_fd_of4values(i2rec , i2as, fd_reverse);
-    if (fd < fd_reverse)
+    if (fd < fd_reverse ) // 如果reverse后和之前 fd相同，则优先考虑未reverse的情况
     {
         fd = fd_reverse ;
     }
     else
+    {
         i2rec->rec_reverse(); // 重新恢复转置
+        *i2rec = rec_un_reverse;
+        i2as->place_type = i2rec->place_type;
+    }
     return 1 ;
 }
 

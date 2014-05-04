@@ -81,6 +81,9 @@ public:
     int width; // 宽度
     int height; // 高度
     bool reverse_mode ; // 是否旋转：1 旋转; 0未选转
+     int place_type; // 放置类型,-1表示还未放置
+                     // 取值 LEFT_BOTTLE,LEFT_TOP,RIGHT_BOTTLE, RIGHT_TOP
+   
 
     rectangle():left_bottle(),width(0),height(0),reverse_mode(0){    }
 
@@ -110,6 +113,7 @@ public:
     void set_ordinate_lb(const conner & _conner_lb)
         {
             left_bottle  = _conner;
+            place_type = LEFT_BOTTLE;
         }
 
     // 从坐上角设置左下角坐标
@@ -117,6 +121,7 @@ public:
         {
             left_bottle.x  = _conner_lt.x;
             left_bottle.y  = _conner_lt.y - height;
+            place_type = LEFT_TOP;
         }
 
     // 从右下角设置左下角坐标
@@ -124,6 +129,7 @@ public:
         {
             left_bottle.x  = _conner_rb.x - width;
             left_bottle.y  = _conner_lt.y ;
+            place_type = RIGHT_BOTTLE;
         }
 
     // 从右上角设置左下角坐标
@@ -131,6 +137,7 @@ public:
         {
             left_bottle.x  = _conner_rb.x - width;
             left_bottle.y  = _conner_lt.y - height;
+            place_type = RIGHT_TOP;
         }
 
     // 长和宽反转
@@ -188,7 +195,6 @@ public:
 class action_space :public rectangle
 {
 public:
-    int place_type; // 放置类型,-1表示还未放置
     bool is_conflict; // 是否被新放入的木块重叠
 };
 

@@ -2,6 +2,8 @@
 #define REC_PACKING_H
 #include <vector>
 #include <algorithm>
+#include <set>
+
 using namespace std;
 
 const int LEFT_BOTTLE 0 ;

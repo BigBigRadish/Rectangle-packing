@@ -9,6 +9,7 @@
 #include <iostream>
 #include "rec_packing.H"
 
+
 using namespace std;
 
 vector<Hline> g_v_hline; // 所有水平线
@@ -16,6 +17,7 @@ vector<Vline> g_v_vline ; // 所有垂直线
 vector<rectangle> g_v_rec_undo ; // 未处理的木块
 vector<rectangle> g_v_rec_done ; // 已经处理的小木块
 vector<action_space> g_v_as ; // 动作空间
+const int MAX = 999999;
 
 // 选择当前最优的放置
 bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
@@ -246,6 +248,42 @@ bool max_fd_of8values(const vector<rectangle>:: iterator & i2rec,
 }
 
 
+// 左下角算法
+void update_action_space_lb(vector<rectangle>:: iterator i2chonse_rec,conner lb_conner)
+{
+    g_v_hline.push_back(i2chonse_rec->left_top(),i2chonse_rec->right_top());
+    g_v_hline.push_back(i2chonse_rec->left_bottle,i2chonse_rec->right_bottle());
+
+    // 左下角往上，找到新动作空间的左上角的y坐标
+    vector<Hline> v_hline_lb;
+    int as_lt_y = MAX;
+    for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
+    {
+        if (it->get_leftx() <= lb_conner.x && it->get_rightx() > lb_conner.x
+            && it->get_y() > lb_conner.y)
+        {
+            if(as_lt_y > it->get_y() )
+                as_lt_y = it->get_y();
+        }
+    }
+
+    // 寻找右上角的x坐标
+    g_v_vline.push_back(i2chonse_rec->left_bottle, i2chonse_rec->left_top() );
+    g_v_vline.push_back(i2chonse_rec->right_bottle(), i2chonse_rec->right_top() );
+
+    int as_rt_x = MAX ;
+    for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
+    {
+        if (it->get_x() > lb_conner.x && it->get_topy() > lb_conner.y
+            && it->get_bottley() < hline_lb_y)
+        {
+            if (as_lt_x > it->get_x())
+                as_lt_x = it->get_x();
+        }
+    }
+    
+    
+}
 
 void update_action_space(vector<rectangle>::iterator i2chonse_rec
                          vector<action_space>::iterator i2chonse_as )

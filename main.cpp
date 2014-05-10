@@ -249,13 +249,12 @@ bool max_fd_of8values(const vector<rectangle>:: iterator & i2rec,
 
 
 // 左下角算法
-void update_action_space_lb(vector<rectangle>:: iterator i2chonse_rec,conner lb_conner)
+void update_action_space_lb(vector<rectangle>:: iterator i2chonse_rec,const conner & lb_conner)
 {
     g_v_hline.push_back(i2chonse_rec->left_top(),i2chonse_rec->right_top());
     g_v_hline.push_back(i2chonse_rec->left_bottle,i2chonse_rec->right_bottle());
 
     // 左下角往上，找到新动作空间的左上角的y坐标
-    vector<Hline> v_hline_lb;
     int as_lt_y = MAX;
     for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
     {
@@ -275,13 +274,15 @@ void update_action_space_lb(vector<rectangle>:: iterator i2chonse_rec,conner lb_
     for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
     {
         if (it->get_x() > lb_conner.x && it->get_topy() > lb_conner.y
-            && it->get_bottley() < hline_lb_y)
+            && it->get_bottley() < as_lt_ycpper)
         {
             if (as_lt_x > it->get_x())
                 as_lt_x = it->get_x();
         }
     }
     
+    // 左下角往上
+    int as_rb_y = MAX ;
     
 }
 

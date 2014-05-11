@@ -18,6 +18,8 @@ vector<rectangle> g_v_rec_undo ; // 未处理的木块
 vector<rectangle> g_v_rec_done ; // 已经处理的小木块
 vector<action_space> g_v_as ; // 动作空间
 const int MAX = 999999;
+const int MIN = -99999;
+
 
 // 选择当前最优的放置
 bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
@@ -251,40 +253,263 @@ bool max_fd_of8values(const vector<rectangle>:: iterator & i2rec,
 // 左下角算法
 void update_action_space_lb(vector<rectangle>:: iterator i2chonse_rec,const conner & lb_conner)
 {
-    g_v_hline.push_back(i2chonse_rec->left_top(),i2chonse_rec->right_top());
-    g_v_hline.push_back(i2chonse_rec->left_bottle,i2chonse_rec->right_bottle());
-
-    // 左下角往上，找到新动作空间的左上角的y坐标
-    int as_lt_y = MAX;
+    // 这4条线放到外部
+    g_v_hline.push_back(Hline(i2chonse_rec->left_top(),i2chonse_rec->right_top()));
+    g_v_hline.push_back(Hline(i2chonse_rec->left_bottle,i2chonse_rec->right_bottle()));
+    g_v_vline.push_back(Vline(i2chonse_rec->left_bottle, i2chonse_rec->left_top() ));
+    g_v_vline.push_back(Vline(i2chonse_rec->right_bottle(), i2chonse_rec->right_top() ) );
+    
+    //a1 左下角往上，找到新动作右上角y坐标
+    int as_top_y = MAX;
     for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
     {
-        if (it->get_leftx() <= lb_conner.x && it->get_rightx() > lb_conner.x
+        // 寻找满足条件的y坐标的最小的
+        if (it->pt_left.x <= lb_conner.x && it->pt_right.x > lb_conner.x
             && it->get_y() > lb_conner.y)
         {
-            if(as_lt_y > it->get_y() )
-                as_lt_y = it->get_y();
+            if(as_top_y > it->get_y() )
+                as_top_y = it->get_y();
         }
     }
-
-    // 寻找右上角的x坐标
-    g_v_vline.push_back(i2chonse_rec->left_bottle, i2chonse_rec->left_top() );
-    g_v_vline.push_back(i2chonse_rec->right_bottle(), i2chonse_rec->right_top() );
-
-    int as_rt_x = MAX ;
+    
+    //a2 寻找右上角的x坐标
+    int as_right_x = MAX ;
     for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
     {
-        if (it->get_x() > lb_conner.x && it->get_topy() > lb_conner.y
-            && it->get_bottley() < as_lt_ycpper)
+        // 寻找满足条件的x坐标最小的
+        if (it->get_x() > lb_conner.x && it->pt_top.y > lb_conner.y
+            && it->pt_bottle.y < as_top_y)
         {
-            if (as_lt_x > it->get_x())
-                as_lt_x = it->get_x();
+            if (as_right_x > it->get_x())
+                as_right_x = it->get_x();
         }
     }
+    action_space as(lb_conner,as_right_x - lb_conner.x, as_top_y - lb_conner.y);
+    if (find(g_v_as.begin(), g_v_as_.end(), as) == g_v_as.end())
+        g_v_as.push_back(as);
     
-    // 左下角往上
-    int as_rb_y = MAX ;
-    
+    //b1  左下角往上，寻找右上角的x坐标
+    as_right_x = MAX ;
+    as_top_y = MAX ;
+    for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
+    {
+        // 寻找满足条件的x坐标最小的
+        if (it->get_x() > lb_conner.x && it->pt_bottle.y <= lb_conner.y
+            && it->pt_top.y > lb_conner.y)
+        {
+            if (as_right_x > it_get_x() )
+                as_right_x = it->get_x();
+        }
+    }
+
+    // b2 寻找右上角的y坐标
+    for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
+    {
+        if (it->get_y() > lb_conner.y && it->pt_right.x > lb_conner.x
+            && it->pt_left.x < as_right_x)
+        {
+            if(as_top_y > it->get_y() )
+                as_top_y = it->get_y();
+        }
+    }
+
+    action_space as2(lb_conner,as_right_x - lb_conner.x, as_top_y - lb_conner.y);
+    if (find(g_v_as.begin(), g_v_as_.end(), as2) == g_v_as.end())
+        g_v_as.push_back(as2);
 }
+
+// 左上角算法
+void update_action_space_lt(vector<rectangle>:: iterator i2chonse_rec,const conner & lt_conner)
+{
+    int as_bottle_y = MIN;
+    int as_right_x = MAX;
+    // a1 先向下扩展，寻找下边界,即动作空间的右下角的y坐标
+    for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
+    {
+        // 寻找满足条件的y坐标的最大的
+        if (it->get_y() < lt_conner.y && it->pt_left.x <= lt_conner.x
+            && it->pt_right.x > lt_conner.x)
+        {
+            if (as_bottle_y < it->get_y() )
+                as_bottle_y = it->get_y();
+        }
+    }
+
+    // a2 寻找右边界，即右下角的x坐标
+    for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
+    {
+        // 寻找满足条件的x坐标最小的
+        if (it->get_x() > lt_conner.x && it->pt_bottle.y < lt_conner.y
+            && it->pt_top.y > as_bottle.y)
+        {
+            if (as_right_x > it->get_x() )
+                as_right_x = it->get_x();
+        }
+    }
+
+    action_space as(conner(lt_conner.x, as_bottle_y),as_right_x - lt_conner.x,
+                    lt_conner.y - as_bottle_y );
+    if (find(g_v_as.begin(), g_v_as_.end(), as) == g_v_as.end())
+        g_v_as.push_back(as);
+
+    // b1 先向右扩展，寻找右边界，即动作空间的右下角的x坐标
+    as_bottle_y = MIN;
+    as_right_x = MAX;
+    for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
+    {
+        // 寻找满足条件的x坐标最小的
+        if (it->get_x() > lt_conner.x && it->pt_top.y >= lt_conner.y
+            && it->pt_bottle.y < lt_conner.y )
+        {
+            if (as_right_x > it->get_x() )
+                as_right_x = it->get_x();
+        }
+    }
+
+    // b2 下边界，寻找右下角的y坐标
+    for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
+    {
+        // 寻找满足条件的y坐标的最大的
+        if (it->get_y() < lb_conner.y && it->pt_right.x > lt_conner.x
+            && it->pt_left.x < as_right_x)
+        {
+            if(as_bottle_y < it->get_y() )
+                as_bottle_y = it->get_y();
+        }
+    }
+    action_space as2(conner(lt_conner.x, as_bottle_y),as_right_x - lt_conner.x,
+                    lt_conner.y - as_bottle_y );
+    if (find(g_v_as.begin(), g_v_as_.end(), as2) == g_v_as.end())
+        g_v_as.push_back(as2);
+}
+
+// 右上角算法
+void update_action_space_rt(vector<rectangle>:: iterator i2chonse_rec,const conner & rt_conner)
+{
+    int as_bottle_y = MIN ;
+    int as_left_x = MIN ;
+
+    // a1 先向下扩展，寻找下边界，即左下角的y坐标
+    for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
+    {
+        // 寻找满足条件的y坐标的最大的
+        if (it->get_y() < rt_conner.y && it->pt_left.x < rt_conner.x
+            && it->pt_right.x >= rt_conner.x)
+        {
+            if (as_bottle_y < it->get_y() )
+                as_bottle_y = it->get_y();
+        }
+    }
+    // a2 寻找左边界，即左下角的x坐标
+    for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
+    {
+        // 寻找满足条件的x坐标最大的
+        if (it->get_x() < rt_conner.x && it->pt_bottle.y < rt_conner.y
+            && it->pt_top.y > as_bottle_y)
+        {
+            if (as_left_x < it->get_x() )
+                as_left_x = it->get_x();
+        }
+    }
+    action_space as(conner(as_left_x, as_bottle_y),rt_conner.x - as_left_x,
+                    rt_conner.y - as_bottle_y );
+    if (find(g_v_as.begin(), g_v_as_.end(), as) == g_v_as.end())
+        g_v_as.push_back(as);
+
+    // b1 先向左扩展，先寻找左边界，即左下角的x坐标
+    as_bottle_y = MIN;
+    as_left_x = MIN;
+    for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
+    {
+        // 寻找满足条件的x坐标最大的
+        if (it->get_x() < rt_conner.x && it->pt_top.y >= rt_conner.y
+            && it->pt_bottle.y < rt_conner.y )
+        {
+            if (as_left_x < it->get_x() )
+                as_left_x = it->get_x();
+        }
+    }
+
+    // b2 寻找下边界，即左下角的y坐标
+    for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
+    {
+        // 寻找满足条件的y坐标的最大的
+        if (it->get_y() < rt_conner.y && it->pt_right.x > as_left_x
+            && it->pt_left.x < rt_conner.x )
+        {
+            if(as_bottle_y < it->get_y() )
+                as_bottle_y = it->get_y();
+        }
+    }
+    action_space as2(conner(as_left_x, as_bottle_y),rt_conner.x - as_left_x,
+                    rt_conner.y - as_bottle_y );
+    if (find(g_v_as.begin(), g_v_as_.end(), as2) == g_v_as.end())
+        g_v_as.push_back(as2);
+}
+
+// 右下角算法
+void update_action_space_rb(vector<rectangle>:: iterator i2chonse_rec,const conner & rb_conner)
+{
+    // a1 先向上扩展，寻找上界,即左上角的y坐标
+    int as_top_y = MAX ;
+    int as_left_x = MIN ;
+    for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
+    {
+        // 寻找满足条件的y坐标的最小的
+        if (it->get_y() > rb_conner.y && it->pt_right.x >= rb_conner.x
+            && it->pt_left.x < rb_conner.x)
+        {
+            if(as_top_y > it->get_y() )
+                as_top_y = it->get_y();
+        }
+    }
+
+    // a2 寻找左边界，即左上角的x坐标
+    for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
+    {
+        // 寻找满足条件的x坐标最大的
+        if (it->get_x() < rt_conner.x && it->pt_top.y > rb_conner.y
+            && it->pt_bottle.y < as_top_y )
+        {
+            if(as_left_x < it->get_x() )
+                as_left_x = it->get_x();
+        }
+    }
+    action_space as( conner(as_left_x, rb_conner.y),rb_conner.x - as_left_x,
+                     as_top_y - rb_conner.y);
+    if (find(g_v_as.begin(), g_v_as_.end(), as) == g_v_as.end())
+        g_v_as.push_back(as);
+
+    // b1 先向左扩展，寻找左上角的x坐标
+    as_top_y = MAX ;
+    as_left_x = MIN ;
+    for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
+    {
+        // 寻找满足条件的x坐标最大的
+        if (it->get_x() < rb_conner.x && it->pt_bottle.y <= rb_conner.y
+            && it->pt_top.y > rb_conner.y)
+        {
+            if (as_left_x < it->get_x() )
+                as_left_x = it->get_x();
+        }
+    }
+    // b2 寻找上边界，即左上角的y坐标
+    for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
+    {
+        // 寻找满足条件的y坐标最小的
+        if (it->get_y() > rb_conner.y && it->pt_right.x > as_left_x
+            && it->pt_left.x < rb_conner.x )
+        {
+            if (as_top_y > it->get_y() )
+                as_top_y = it->get_y();
+        }
+    }
+    action_space as2( conner(as_left_x, rb_conner.y),rb_conner.x - as_left_x,
+                     as_top_y - rb_conner.y);
+    if (find(g_v_as.begin(), g_v_as_.end(), as2) == g_v_as.end())
+        g_v_as.push_back(as2);    
+}
+
 
 void update_action_space(vector<rectangle>::iterator i2chonse_rec
                          vector<action_space>::iterator i2chonse_as )

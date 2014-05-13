@@ -6,10 +6,20 @@
 
 using namespace std;
 
-const int LEFT_BOTTLE 0 ;
-const int LEFT_TOP 1 ;
-const int RIGHT_TOP 2;
-const int RIGHT_BOTTLE 3;
+
+// conner type
+const int LEFT_BOTTLE =  0 ;
+const int LEFT_TOP = 1 ;
+const int RIGHT_TOP = 2;
+const int RIGHT_BOTTLE = 3;
+
+
+// line type
+const int LEFT_LINE = 0 ;
+const int RIGHT_LINE = 1 ;
+const int UP_LINE = 2 ;
+const int DOWN_LINE = 3;
+
 
 // 穴度
 class fit_degree
@@ -57,8 +67,8 @@ class conner
 {
 public:
     conner():x(0),y(0),is_valid(0){}
-    conner(int _x , int _y ,int _ctype=0):
-        x(_x),y(_y),is_valid(_ctype){}
+    conner(int _x , int _y ,int _is_valid=0, int _conner_type):
+        x(_x),y(_y),is_valid(_is_valid),conner_type(_conner_type){}
     void set_conner(int _x ,int _y);
 
     // 更新角的类型
@@ -73,11 +83,25 @@ public:
             else
                 return 0;
         }
+    bool operator <(const conner & _cn)
+        {
+            if (x < _cn.x)
+                return 1;
+            else if( x == _cn.x)
+                {
+                    if(y < _cn.y)
+                        return 1;
+                    else
+                        return 0;
+                }
+            else
+                return 0;
+        }
     int x;
     int y;
     // is_valid = 1 实角 ; ctype = 0 虚角
     bool is_valid;
-    char conner_type; //
+    int  conner_type; //
     
 };
         
@@ -257,9 +281,10 @@ public:
     conner pt_left; // 左端点
     conner pt_right; // 右端点
     int isblock;
-
-    Hline(const conner & _pt_left,const conner & _pt_right)
-        :pt_left(_pt_left),pt_right(_pt_right),isblock(0)
+    int line_type;
+    
+    Hline(const conner & _pt_left,const conner & _pt_right, int _line_type)
+        :pt_left(_pt_left),pt_right(_pt_right),isblock(0),line_type(_line_type)
         {
         }
     
@@ -307,9 +332,9 @@ public:
     conner pt_bottle; // 底端点
     conner pt_top; // 顶端点
     int isblock;
-
-    Vline(const conner & _pt_bottle,const conner & _pt_top)
-        :pt_bottle(_pt_bottle),pt_top(_pt_top),isblock(0)
+    int line_type ;
+    Vline(const conner & _pt_bottle,const conner & _pt_top,int _line_type)
+        :pt_bottle(_pt_bottle),pt_top(_pt_top),isblock(0),line_type(_line_type)
         {
         }
     

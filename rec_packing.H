@@ -104,7 +104,6 @@ public:
     int  conner_type; //
     
 };
-        
 
 class rectangle
 {
@@ -115,9 +114,9 @@ public:
     bool reverse_mode ; // 是否旋转：1 旋转; 0未选转
      int place_type; // 放置类型,-1表示还未放置
                      // 取值 LEFT_BOTTLE,LEFT_TOP,RIGHT_BOTTLE, RIGHT_TOP
-   
 
-    rectangle():left_bottle(),width(0),height(0),reverse_mode(0){    }
+    rectangle():left_bottle(),width(0),height(0),
+                reverse_mode(0),place_type(-1){    }
 
     rectangle(const conner & _left_bottle, int _width, int _height )
         :left_bottle(_left_bottle),width(_width),

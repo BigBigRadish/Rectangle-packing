@@ -17,7 +17,9 @@ vector<Vline> g_v_vline ; // 所有垂直线
 vector<rectangle> g_v_rec_undo ; // 未处理的木块
 vector<rectangle> g_v_rec_done ; // 已经处理的小木块
 vector<action_space> g_v_as ; // 动作空间
+vector<conner> g_v_new_conner; // 每次新生成的角
 set<conner> g_s_conner; // 所有的实角
+
 
 
 const int MAX = 999999;
@@ -52,7 +54,29 @@ int main(int arg ,char *arv[])
 }
 
 
-
+void deal()
+{
+    vector<rectangle>::iterator i2chonse_rec = g_v_rec_undo.begin();
+    vector<action_space>::iterator i2chonse_as = g_v_as.begin();
+    rectangle rec_chonse ;
+    action_space as_chonse;
+    
+    while(chose_as_rec(i2chonse_rec,i2chonse_as))
+    {
+        // 因为vector会改变，所以迭代器有可能失效，所以需要保存其对应值
+        rec_chonse = *i2chonse_rec;
+        as_chonse = *i2chonse_as ;
+        
+        
+        g_v_rec_done.push_back(*i2chonse_rec);
+        g_v_rec_undo.erase(i2chonse_rec);
+        
+        
+        
+        
+        
+    }
+}
 
 // 选择动作空间和小木块
 bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
@@ -593,6 +617,23 @@ void generate_conners(vector<rectangle>::iterator i2chonse_rec,
     
 }
 
+void add_new_conner(const action_space & as)
+{
+    if (as.is_conflict == 1)
+    {
+        g_v_new_conner.push_back(conner())
+    }
+}
+
+
+void find_confilict_as(vector<rectangle>::iterator i2chonse_rec,
+                       vector<action_space>::iterator i2chonse_as)
+{
+    rectangle_conflict rec_conflict(i2chonse_rec->left_bottle,i2chonse_rec->width,
+                                    i2chonse_rec->height);
+    for_each(g_v_as.begin(),g_v_as.end(),rec_conflict);
+    
+}
 
 void update_action_space(vector<rectangle>::iterator i2chonse_rec,
                          vector<action_space>::iterator i2chonse_as )

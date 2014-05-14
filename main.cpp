@@ -513,8 +513,8 @@ void conner2as_rb(vector<rectangle>:: iterator i2chonse_rec,const conner & rb_co
 
 void find_conner_vline2downline(const Vline & vline, const Hline & down_line)
 {
-    if (vline.pt_top.y == down_line.get_y() && vline.get_x() >= down_line.pt_left.x
-            && vline.get_x() <= down_line.pt_right.x)
+    if (vline.pt_top.y >= down_line.get_y() && vline.pt_bottle.y < down_line.get_y()
+        && vline.get_x() >= down_line.pt_left.x && vline.get_x() <= down_line.pt_right.x)
     {
         // 如果垂直线是右沿线，那么和举行块下沿线组成角为左上角
         if (vline.line_type == RIGHT_LINE && vline.get_x()!= down_line.pt_right.x)
@@ -527,8 +527,8 @@ void find_conner_vline2downline(const Vline & vline, const Hline & down_line)
 
 void find_conner_vline2upline(const Vline & vline, const Hline & up_line)
 {
-    if (it->pt_bottle.y == up_line.get_y() && vline.get_x() >= up_line.pt_left.x
-        && vline.get_x() <= up_line.pt_right.x)
+    if (vline.pt_bottle.y <= up_line.get_y() && vline.pt_top.y > up_line.get_y()
+        && vline.get_x() >= up_line.pt_left.x && vline.get_x() <= up_line.pt_right.x )
     {
         // 垂直线是左沿线且不和矩形上沿线的左端点重合，右下角
         if (vline.line_type == LEFT_LINE && vline.get_x() != up_line.pt_left.x)
@@ -541,8 +541,8 @@ void find_conner_vline2upline(const Vline & vline, const Hline & up_line)
 
 void find_conner_hline2leftline(const Hline & hline, const Vline & left_line)
 {
-    if (hline.pt_right.x == left_line.get_x() && hline.get_y() >= left_line.pt_bottle.y
-        && hline.get_y() <= left_line.pt_top.y)
+    if (hline.pt_right.x >= left_line.get_x() && hline.pt_left.x < left_line.get_x()
+        && hline.get_y() >= left_line.pt_bottle.y && hline.get_y() <= left_line.pt_top.y)
     {
         // 如果水平线是上沿线，则和矩形块的左沿线组成角为右下角
         if (hline.line_type == UP_LINE && hline.get_y() != left_line.pt_top.y)
@@ -555,8 +555,8 @@ void find_conner_hline2leftline(const Hline & hline, const Vline & left_line)
 
 void find_conner_hline2rightline(const Hline & hline, const Vline & right_line)
 {
-    if (hline.pt_left.x == right_line.x && hline.get_y() >= right_line.pt_bottle.y
-        && hline.get_y() <= right_line.pt_top.y)
+    if (hline.pt_left.x <= right_line.get_x() && hline.pt_right.x > right_line.get_x()
+        && hline.get_y() >= right_line.pt_bottle.y && hline.get_y() <= right_line.pt_top.y)
     {
         // 水平线是上沿线，且不和当前矩形右沿线的上端点重合，左下角
         if (hline.line_type == UP_LINE && hline.get_y() != right_line.pt_top.y )
@@ -768,6 +768,28 @@ void generate_conners_lt(vector<rectangle>::iterator i2chonse_rec,
         
 }
 
+
+void generate_conners(vector<rectangle>::iterator i2chonse_rec,
+                         vector<action_space>::iterator i2chonse_as)
+{
+    Hline upl(i2chonse_rec->left_top(),i2chonse_rec->right_top(),UP_LINE);
+    Hline downl(i2chonse_rec->left_bottle,i2chonse_rec->right_bottle(),DOWN_LINE);
+    Vline leftl(i2chonse_rec->left_bottle, i2chonse_rec->left_top() ,LEFT_LINE);
+    Vline rightl(i2chonse_rec->right_bottle(), i2chonse_rec->right_top() ,RIGHT_LINE);
+
+    for (vector<Vline>::iterator it = g_v_vline.begin(); it != g_v_vline.end(); ++it)
+    {
+        find_conner_vline2upline(*it,upl);
+        find_conner_vline2downline(*it,downl);
+    }
+
+    for (vector<Hline>::iretator it = g_v_hline.begin(); it != g_v_hline.end(); ++it)
+    {
+        find_conner_hline2leftline(*it,leftl);
+        find_conner_hline2rightline(*it,rightl);
+    }
+    
+}
 
 
 void update_action_space(vector<rectangle>::iterator i2chonse_rec,

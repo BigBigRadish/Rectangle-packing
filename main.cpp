@@ -509,6 +509,65 @@ void conner2as_rb(vector<rectangle>:: iterator i2chonse_rec,const conner & rb_co
         g_v_as.push_back(as2);    
 }
 
+
+
+void find_conner_vline2downline(const Vline & vline, const Hline & down_line)
+{
+    if (vline.pt_top.y == down_line.get_y() && vline.get_x() >= down_line.pt_left.x
+            && vline.get_x() <= down_line.pt_right.x)
+    {
+        // 如果垂直线是右沿线，那么和举行块下沿线组成角为左上角
+        if (vline.line_type == RIGHT_LINE && vline.get_x()!= down_line.pt_right.x)
+            g_s_conner.insert(conner(vline.get_x(),down_line.get_y(),1,LEFT_TOP) );
+        // 左沿线，右上角
+        if(vline.line_type == LEFT_LINE && vline.get_x()!= down_line.pt_left.x ) 
+            g_s_conner.insert(conner(vline.get_x(),down_line.get_y(),1,RIGHT_TOP) );
+    }
+}
+
+void find_conner_vline2upline(const Vline & vline, const Hline & up_line)
+{
+    if (it->pt_bottle.y == up_line.get_y() && vline.get_x() >= up_line.pt_left.x
+        && vline.get_x() <= up_line.pt_right.x)
+    {
+        // 垂直线是左沿线且不和矩形上沿线的左端点重合，右下角
+        if (vline.line_type == LEFT_LINE && vline.get_x() != up_line.pt_left.x)
+            g_s_conner.insert(conner(vline.get_x(),up_line.get_y(),1,RIGHT_BOTTLE) );
+        // 垂直线是右沿线且不和矩形上沿线的右端点重合，左下角
+        if (vline.line_type == RIGHT_LINE && vline.get_x() != up_line.pt_right.x)
+            g_s_conner.insert(conner(vline.get_x(),up_line.get_y(),1,LEFT_BOTTLE) );
+    }
+}
+
+void find_conner_hline2leftline(const Hline & hline, const Vline & left_line)
+{
+    if (hline.pt_right.x == left_line.get_x() && hline.get_y() >= left_line.pt_bottle.y
+        && hline.get_y() <= left_line.pt_top.y)
+    {
+        // 如果水平线是上沿线，则和矩形块的左沿线组成角为右下角
+        if (hline.line_type == UP_LINE && hline.get_y() != left_line.pt_top.y)
+            g_s_conner.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_BOTTLE));
+        // 如果水平线是下沿线，则和矩形块的左沿线组成角为右上角
+        if (hline.line_type == DOWN_LINE && hline.get_y() != left_line.pt_bottle.y )
+            g_s_conner.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_TOP));
+    }
+}
+
+void find_conner_hline2rightline(const Hline & hline, const Vline & right_line)
+{
+    if (hline.pt_left.x == right_line.x && hline.get_y() >= right_line.pt_bottle.y
+        && hline.get_y() <= right_line.pt_top.y)
+    {
+        // 水平线是上沿线，且不和当前矩形右沿线的上端点重合，左下角
+        if (hline.line_type == UP_LINE && hline.get_y() != right_line.pt_top.y )
+            g_s_conner.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_BOTTLE ));
+        // 水平线是下沿线，且不和当前矩形右沿线的下端点重合，左上角
+        if (hline.line_type == DOWN_LINE && hline.get_y() != right_line.pt_bottle.y)
+            g_s_conner.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_TOP ));
+    }
+}
+
+
 // 放置动作空间的左下角，可能产生的新的角
 void generate_conners_lb(vector<rectangle>::iterator i2chonse_rec,
                          vector<action_space>::iterator i2chonse_as,
@@ -583,18 +642,21 @@ void generate_conners_lb(vector<rectangle>::iterator i2chonse_rec,
     } // end for
 
     mark = 0 ;
+    int cn_rb_mark = 0 ;
     for (vector<Hline>::iterator it = g_v_hline.begin(); it != g_v_hline.end() ; ++it)
     {
-        // 与动作空间下边形成的夹角
-        if (i2chonse_rec->width < i2chonse_as->height )
+        // 与动作空间下边形成的夹角,这个角只要条件满足，就必然存在
+        if (cn_rb_mark == 0)
         {
             if (it->get_y() == rightl.pt_bottle.y && it->pt_left.x <= rightl.get_x()
                 && it->pt_right.x > rightl.get_x())
             {
                 g_s_conner.insert(conner(rightl.get_x(),it->get_y(),1,LEFT_BOTTLE));
+                cn_rb_mark == 1 ;
             }
         }
-        else // 动作空间宽度和小矩形一样
+         // 动作空间宽度和小矩形一样
+        if (i2chonse_rec->width == i2chonse_as->height )
         {
             // 水平线和小矩形的右沿线所构成的角
             if (it->pt_left.x == rightl.x && it->get_y() >= rightl.pt_bottle.y
@@ -653,7 +715,7 @@ void generate_conners_lt(vector<rectangle>::iterator i2chonse_rec,
 
     for (vector<Vline>::iterator it = g_v_vline.begin(); it != g_v_vline.end(); ++it)
     {
-        // 如果动作空间的高度比小矩形大
+        // 如果动作空间的高度比小矩形大，才可能存在这个角
         if (i2chonse_rec->height < i2chonse_as->height ) 
         {
             // 与动作空间左边形成的夹角,左上角
@@ -665,67 +727,48 @@ void generate_conners_lt(vector<rectangle>::iterator i2chonse_rec,
         {
             // 在这种情况下，就要考虑垂直线和小矩形下沿所构成的角
             find_conner_vline2downline(*it,downl);
+            // 以及矩形块的右下角是否能和动作空间构成一个右下角
+            if (mark == 0)
+            {
+                mark = 1;
+                for (vector<Hline>::iterator ith = g_v_hline.begin(); ith!= g_v_hline.end(); ++ith)
+                {
+                    if (ith->get_y() == rightl.pt_bottle.y && ith->pt_left.x <= rightl.get_x()
+                        && ith->pt_right.x > rightl.get_x())
+                    {
+                        g_s_conner.insert(conner(rightl.get_x(),rightl.pt_bottle.y,1,LEFT_BOTTLE));
+                        break;
+                    }
+                }
+            }
         }
+        
+        // 矩形块上沿与其它垂直线形成的夹角
+        find_conner_vline2upline(*it,upl);
+    } // end for
+    
+    mark = 0 ;
+    int cn_lt_mark = 0 ;
+    for (vector<HLine>::iterator it = g_v_hline.begin(); it != g_v_hline.end(); it++)
+    {
+        // 与动作空间上边所形成的夹角,这个角只要条件满足就存在的
+        if (cn_lt_mark == 0 )
+        {
+            if (it->get_y() == rightl.pt_top.y && it->pt_left.x <=rightl.get_x()
+                && it->pt_right.x > rightl.get_x())
+            {
+                g_s_conner.insert(conner(rightl.get_x(),rightl.pt_top.y,1,LEFT_TOP));
+                cn_lt_mark = 1;
+            }
+        }
+        
+        
     }
+    
         
 }
 
 
-void find_conner_vline2downline(const Vline & vline, const Hline & down_line)
-{
-    if (vline.pt_top.y == down_line.get_y() && vline.get_x() >= down_line.pt_left.x
-            && vline.get_x() <= down_line.pt_right.x)
-    {
-        // 如果垂直线是右沿线，那么和举行块下沿线组成角为左上角
-        if (vline.line_type == RIGHT_LINE && vline.get_x()!= down_line.pt_right.x)
-            g_s_conner.insert(conner(vline.get_x(),down_line.get_y(),1,LEFT_TOP) );
-        // 左沿线，右上角
-        if(vline.line_type == LEFT_LINE && vline.get_x()!= down_line.pt_left.x ) 
-            g_s_conner.insert(conner(vline.get_x(),down_line.get_y(),1,RIGHT_TOP) );
-    }
-}
-
-void find_conner_vline2upline(const Vline & vline, const Hline & up_line)
-{
-    if (it->pt_bottle.y == up_line.get_y() && vline.get_x() >= up_line.pt_left.x
-        && vline.get_x() <= up_line.pt_right.x)
-    {
-        // 垂直线是左沿线且不和矩形上沿线的左端点重合，右下角
-        if (vline.line_type == LEFT_LINE && vline.get_x() != up_line.pt_left.x)
-            g_s_conner.insert(conner(vline.get_x(),up_line.get_y(),1,RIGHT_BOTTLE) );
-        // 垂直线是右沿线且不和矩形上沿线的右端点重合，左下角
-        if (vline.line_type == RIGHT_LINE && vline.get_x() != up_line.pt_right.x)
-            g_s_conner.insert(conner(vline.get_x(),up_line.get_y(),1,LEFT_BOTTLE) );
-    }
-}
-
-void find_conner_hline2leftline(const Hline & hline, const Vline & left_line)
-{
-    if (hline.pt_right.x == left_line.get_x() && hline.get_y() >= left_line.pt_bottle.y
-        && hline.get_y() <= left_line.pt_top.y)
-    {
-        // 如果水平线是上沿线，则和矩形块的左沿线组成角为右下角
-        if (hline.line_type == UP_LINE && hline.get_y() != left_line.pt_top.y)
-            g_s_conner.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_BOTTLE));
-        // 如果水平线是下沿线，则和矩形块的左沿线组成角为右上角
-        if (hline.line_type == DOWN_LINE && hline.get_y() != left_line.pt_bottle.y )
-            g_s_conner.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_TOP));
-    }
-}
-
-void find_conner_hline2rightline(const Hline & hline, const Vline & right_line)
-{
-    if (hline.pt_left.x == right_line.x && hline.get_y() >= right_line.pt_bottle.y
-        && hline.get_y() <= right_line.pt_top.y)
-    {
-        // 水平线是上沿线，且不和当前矩形右沿线的上端点重合，左下角
-        if (hline.line_type == UP_LINE && hline.get_y() != right_line.pt_top.y )
-            g_s_conner.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_BOTTLE ));
-        // 水平线是下沿线，且不和当前矩形右沿线的下端点重合，左上角
-        if (hline.line_type == DOWN_LINE && hline.get_y() != right_line.pt_bottle.y)
-            g_s_conner.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_TOP ));
-    }
-}
 
 void update_action_space(vector<rectangle>::iterator i2chonse_rec,
                          vector<action_space>::iterator i2chonse_as )

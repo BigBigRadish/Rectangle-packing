@@ -7,6 +7,7 @@
 *************************************************************/
 
 #include <iostream>
+#include <fstream>
 #include "rec_packing.H"
 #include <string>
 
@@ -36,13 +37,8 @@ bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
                   vector<action_space>::iterator & i2chonse_as);
 
 // 更新动作空间
-void update_action_space(vector<rectangle>::iterator i2chonse_rec
+void update_action_space(vector<rectangle>::iterator i2chonse_rec,
                          vector<action_space>::iterator i2chonse_as );
-
-// 更新线段
-void update_line(vector<rectangle>::iterator i2chonse_rec);
-
-
 
 // 计算穴度
 // 确保不该边 i2rec 对应的值
@@ -50,35 +46,117 @@ void calculate_fd(vector<rectangle>:: const_iterator i2rec,
                   vector<action_space>::const_iterator i2as,
                   fit_degree & fd);
 
+// 计算贴边数
+int calculate_fd_k(vector<rectangle>::const_iterator i2rec,
+                   vector<action_space>::const_iterator i2as);
+
+
+// 计算平整度
+// 没有采用剩余动作个数
+double calculate_fd_s(vector<rectangle>::const_iterator i2rec,
+                      vector<action_space>::const_iterator i2as);
+
+
+// 求出木块 i2rec 在动作空间i2as的4个位置中最忧位置
+// 并且 i2rec 的值已经被更新
+// 4 个位置是因为没有旋转
+void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
+                       const vector<action_space>::iterator & i2as,
+                       fit_degree & fd);
+
+// 计算小矩形在动作空间 i2as 四个角的fd，包括水平和垂直方向
+// 也即有4*2 个值选取
+bool max_fd_of8values(const vector<rectangle>:: iterator & i2rec,
+                      const vector<action_space>::iterator & i2as,
+                      fit_degree & fd);
+
+// 左下角算法,由左下角生成动作空间
+void conner2as_lb(const conner & lb_conner);
+
+// 左上角算法
+void conner2as_lt(const conner & lt_conner);
+
+// 右上角算法
+void conner2as_rt(const conner & rt_conner);
+
+// 右下角算法
+void conner2as_rb(const conner & rb_conner);
+
+// 寻找小矩形的下沿线和垂直线构成的角
+void find_conner_vline2downline(const Vline & vline, const Hline & down_line);
+
+// 寻找小矩形的上沿线和垂直线构成的角
+void find_conner_vline2upline(const Vline & vline, const Hline & up_line);
+
+// 寻找小矩形的左沿线和水平线构成的角
+void find_conner_hline2leftline(const Hline & hline, const Vline & left_line);
+
+// 寻找小矩形的右沿线和水平线构成的角
+void find_conner_hline2rightline(const Hline & hline, const Vline & right_line);
+
+
+// 生成实角
+void generate_conners(vector<rectangle>::iterator i2chonse_rec);
+
+// 寻找被矩形块 i2chonse_rec冲突的动作空间
+// 并且把这几个动作空间的实角添加到 生成动作空间的角集合中
+void find_conflict_as(vector<rectangle>::iterator i2chonse_rec);
+
+// 更新动作空间
+void update_action_space();
+
+void deal();
+
+
+
+
+    
+
+    
+    
+
 // 初始化操作
 void init();
 
 
 
+// 输出最后数据
+void output_data();
+
+
+
 int main(int arg ,char *arv[])
 {
-        
+    init();
+    
+    deal();
 }
 
 void init()
 {
     // 读入矩形框，以及木块
-    read_data();
-    ifstream ifile("data.txt");
+    ifstream ifile;
+    ifile.open("data.txt");
     int rec_number;
     ifile >> g_as.width;
     ifile >> g_as.height;
+    cout<<"the big as:"<<g_as.width<<" "<<g_as.height<<endl;
     g_as.left_bottle.x = 0 ;
     g_as.left_bottle.y = 0 ;
     ifile >> rec_number;
     rectangle rec;
     int i = 0 ;
-    while(!ifile.eof() && i< rec_number)
+    while((!ifile.eof()) && i< rec_number)
     {
+        i++;
         ifile >> rec.width;
         ifile >> rec.height;
+        cout<<"read:"<<rec.width<<" "<<rec.height<<endl;
         g_v_rec_undo.push_back(rec);
     }
+    cout<<"rec size:"<<g_v_rec_undo.size()<<endl;
+    
+
     // 初始化动作空间
     g_v_as.push_back(g_as);
     
@@ -98,19 +176,24 @@ void init()
 }
 
 // 消除被覆盖的实角
-void remove_conner_blocked(const rectangle & rec)
+void remove_conner_blocked(rectangle & rec)
 {
-    g_s_conner.erase(rec.left_top());
-    g_s_conner.erase(rec.right_top());
-    g_s_conner.erase(rec.left_bottle);
+    g_s_conner.erase(rec.left_top() );
+    g_s_conner.erase(rec.right_top()) ;
+    g_s_conner.erase(rec.left_bottle );
     g_s_conner.erase(rec.right_bottle());
 
-    g_v_conner2space.erase(rec.left_top());
-    g_v_conner2space.erase(rec.right_top());
-    g_v_conner2space.erase(rec.left_bottle);
-    g_v_conner2space.erase(rec.right_bottle());
+    g_v_conner2space.erase(remove(g_v_conner2space.begin(),g_v_conner2space.end(),rec.left_top()),
+                           g_v_conner2space.end() );
+    g_v_conner2space.erase(remove(g_v_conner2space.begin(),g_v_conner2space.end(),rec.right_top()),
+                           g_v_conner2space.end() );
+    g_v_conner2space.erase(remove(g_v_conner2space.begin(),g_v_conner2space.end(),rec.left_bottle),
+                           g_v_conner2space.end() );
+    g_v_conner2space.erase(remove(g_v_conner2space.begin(),g_v_conner2space.end(),rec.right_bottle()),
+                           g_v_conner2space.end() );
 
 }
+
 
 void deal()
 {
@@ -123,61 +206,67 @@ void deal()
     while(chose_as_rec(i2chonse_rec,i2chonse_as))
     {
         // vector会改变，所以迭代器有可能失效，需要保存其对应值
+        cout<<"chonse it"<<i2chonse_rec->width<<" "<<i2chonse_rec->height<<endl;
+        
         rec_chonse = *i2chonse_rec;
         as_chonse = *i2chonse_as ;
-
+        
         find_conflict_as(i2chonse_rec);
         remove_conner_blocked(rec_chonse);
         generate_conners(i2chonse_rec);
         update_action_space();
         
-            
         g_v_rec_done.push_back(*i2chonse_rec);
-        g_v_rec_undo.erase(*i2chonse_rec);
-        
-        
+        g_v_rec_undo.erase(i2chonse_rec);
     }
+    output_data();
 }
 
 // 选择动作空间和小木块
 bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
                   vector<action_space>::iterator & i2chonse_as)
 {
+    cout<<"chose_as_rec"<<endl;
     if (g_v_rec_undo.size() == 0)
         return false;
     
     vector<rectangle>::iterator i2rec = g_v_rec_undo.begin();
     vector<action_space>::iterator i2as = g_v_as.begin();
-    vector<rectangle>::iterator i2rec_chosen = g_v_rec_undo.begin();
-    vector<action_space>::iterator i2as_chosen = g_v_as.begin();
+    // vector<rectangle>::iterator i2rec_chosen = g_v_rec_undo.begin();
+    // vector<action_space>::iterator i2as_chosen = g_v_as.begin();
 
     rectangle rec_chosen = g_v_rec_undo[0];
     fit_degree fd;
     fit_degree max_fd ;
     bool finded = 0;
     
-    for (; i2as!= g_v_as.end() ; i2rec++) // 迭代动作空间
+    for (; i2as!= g_v_as.end() ; i2as++) // 迭代动作空间
     {
         for (; i2rec != g_v_rec_undo.end() ; ++i2rec) // 迭代外部矩形块
         {
+            cout<<"begin test rec:"<<i2rec->width<<" "<<i2rec->height<<endl;
             if(!max_fd_of8values(i2rec,i2as,fd))
                 continue;
             finded = 1;
+            cout<<"fd.k:"<<fd.k<<endl;
             if(max_fd < fd || (fd == max_fd && *i2rec > rec_chosen) )
             {
                 rec_chosen = *i2rec ;  // 由于小方块在迭代过程中会被改变，所以保存当前最优解的值
                                         // 坐标，放置方式等会改变
-                i2rec_chosen = i2rec; // 指向当前最优解的那个小方块
-                i2as_chosen = i2as ;
+                i2chonse_rec = i2rec; // 指向当前最优解的那个小方块
+                i2chonse_as = i2as ;
                 max_fd = fd;
+                cout<<"max_fd"<<max_fd.k<<i2rec->width<<" "<<i2rec->height<<endl;
             }
         }
     }
     if (finded)
     {
-        *i2rec_chosen  = rec_chosen ; // 将最优解的那个小方块设置为其最优值
-        i2as->place_type = i2rec_chosen->place_type;
+        *i2chonse_rec  = rec_chosen ; // 将最优解的那个小方块设置为其最优值
+        i2chonse_as->place_type = i2chonse_rec->place_type;
     }
+    cout<<"return :"<<rec_chosen.width<<" "<<rec_chosen.height<<endl;
+    
     return finded ;
 }
 
@@ -200,11 +289,11 @@ int calculate_fd_k(vector<rectangle>::const_iterator i2rec,
 // 计算平整度
 // 没有采用剩余动作个数
 double calculate_fd_s(vector<rectangle>::const_iterator i2rec,
-                          vector<action_space>::const_iterator i2as)
+                      vector<action_space>::const_iterator i2as)
 {
     double di = 0 ;
-    di = min(i2as->get_width - i2rec->get_width,i2as->get_height - i2rec->get_height);
-    return di/(i2rec->get_width + i2rec->get_height);
+    di = min(i2as->width - i2rec->width,i2as->height - i2rec->height);
+    return di/(i2rec->width + i2rec->height);
 }
 
 
@@ -213,10 +302,10 @@ int  calculate_fd_p(vector<rectangle>::const_iterator i2rec,
                           vector<action_space>::const_iterator i2as)
 {
     int fd_p = 0;
-    Hline top_line(i2rec->left_top(),i2rec->right_top());
-    Hline bottle_line(i2rec->left_bottle,i2rec->right_bottle());
-    Vline left_line(i2rec->left_bottle,i2rec->left_top());
-    Vline left_line(i2rec->right_bottle(),i2rec->right_top());
+    Hline top_line(i2rec->left_top(),i2rec->right_top(),UP_LINE);
+    Hline bottle_line(i2rec->left_bottle,i2rec->right_bottle(),DOWN_LINE);
+    Vline left_line(i2rec->left_bottle,i2rec->left_top(),LEFT_LINE);
+    Vline right_line(i2rec->right_bottle(),i2rec->right_top(),RIGHT_LINE);
     
     vector<Hline>::iterator ihline;
     vector<Vline>::iterator ivline;
@@ -277,11 +366,13 @@ void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
             const vector<action_space>::iterator & i2as,
             fit_degree & fd)
 {
+//    cout<<"4value"<<endl;
+    
     fit_degree fd_max ; // 本动作空间针对当前木块目前最大的fd
     rectangle rec_op = *i2rec; // 当前最优的小木块
 
     // left bottle 是实角
-    if(g_s_conner.count(i2as->left_bottle()))
+    if(g_s_conner.count(i2as->left_bottle))
     {
         i2rec->set_ordinate_lb(i2as->left_bottle);
         calculate_fd(i2rec,i2as,fd_max);
@@ -294,7 +385,7 @@ void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     {
         i2rec->set_ordinate_lt(i2as->left_top() );
         calculate_fd(i2rec,i2as,fd);
-        if (fd_max < fd || (fd_max == fd &&  rec_op < *i2rec ) )
+        if (fd_max < fd || (fd_max == fd &&   *i2rec > rec_op) )
         {
             fd_max = fd ;
             rec_op = *i2rec;
@@ -307,7 +398,7 @@ void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     {
         i2rec->set_ordinate_rb(i2as->right_bottle() );
         calculate_fd(i2rec,i2as,fd);
-        if (fd_max < fd || (fd_max == fd &&  rec_op < *i2rec ) )
+        if (fd_max < fd || (fd_max == fd &&  *i2rec > rec_op ) )
         {
             fd_max = fd ;
             rec_op = *i2rec;
@@ -320,7 +411,7 @@ void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     {
         i2rec->set_ordinate_rt(i2as->right_top() );
         calculate_fd(i2rec,i2as,fd);
-        if (fd_max < fd || (fd_max == fd &&  rec_op < *i2rec ) )
+        if (fd_max < fd || (fd_max == fd &&   *i2rec > rec_op) )
         {
             fd_max = fd ;
             rec_op = *i2rec;
@@ -350,6 +441,7 @@ bool max_fd_of8values(const vector<rectangle>:: iterator & i2rec,
                       const vector<action_space>::iterator & i2as,
             fit_degree & fd)
 {
+    cout<<g_v_rec_done.size()<<endl;
     // 放不下,则直接返回false
     if(i2rec->width > i2as->width ||
         i2rec->height > i2as->height )
@@ -405,7 +497,7 @@ void conner2as_lb(const conner & lb_conner)
         }
     }
     action_space as(lb_conner,as_right_x - lb_conner.x, as_top_y - lb_conner.y);
-    if (find(g_v_as.begin(), g_v_as_.end(), as) == g_v_as.end())
+    if (find(g_v_as.begin(), g_v_as.end(), as) == g_v_as.end())
         g_v_as.push_back(as);
     
     //b1  左下角往上，寻找右上角的x坐标
@@ -417,7 +509,7 @@ void conner2as_lb(const conner & lb_conner)
         if (it->get_x() > lb_conner.x && it->pt_bottle.y <= lb_conner.y
             && it->pt_top.y > lb_conner.y)
         {
-            if (as_right_x > it_get_x() )
+            if (as_right_x > it->get_x() )
                 as_right_x = it->get_x();
         }
     }
@@ -434,7 +526,7 @@ void conner2as_lb(const conner & lb_conner)
     }
 
     action_space as2(lb_conner,as_right_x - lb_conner.x, as_top_y - lb_conner.y);
-    if (find(g_v_as.begin(), g_v_as_.end(), as2) == g_v_as.end())
+    if (find(g_v_as.begin(), g_v_as.end(), as2) == g_v_as.end())
         g_v_as.push_back(as2);
 }
 
@@ -460,7 +552,7 @@ void conner2as_lt(const conner & lt_conner)
     {
         // 寻找满足条件的x坐标最小的
         if (it->get_x() > lt_conner.x && it->pt_bottle.y < lt_conner.y
-            && it->pt_top.y > as_bottle.y)
+            && it->pt_top.y > as_bottle_y)
         {
             if (as_right_x > it->get_x() )
                 as_right_x = it->get_x();
@@ -469,7 +561,7 @@ void conner2as_lt(const conner & lt_conner)
 
     action_space as(conner(lt_conner.x, as_bottle_y),as_right_x - lt_conner.x,
                     lt_conner.y - as_bottle_y );
-    if (find(g_v_as.begin(), g_v_as_.end(), as) == g_v_as.end())
+    if (find(g_v_as.begin(), g_v_as.end(), as) == g_v_as.end())
         g_v_as.push_back(as);
 
     // b1 先向右扩展，寻找右边界，即动作空间的右下角的x坐标
@@ -490,7 +582,7 @@ void conner2as_lt(const conner & lt_conner)
     for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
     {
         // 寻找满足条件的y坐标的最大的
-        if (it->get_y() < lb_conner.y && it->pt_right.x > lt_conner.x
+        if (it->get_y() < lt_conner.y && it->pt_right.x > lt_conner.x
             && it->pt_left.x < as_right_x)
         {
             if(as_bottle_y < it->get_y() )
@@ -499,7 +591,7 @@ void conner2as_lt(const conner & lt_conner)
     }
     action_space as2(conner(lt_conner.x, as_bottle_y),as_right_x - lt_conner.x,
                     lt_conner.y - as_bottle_y );
-    if (find(g_v_as.begin(), g_v_as_.end(), as2) == g_v_as.end())
+    if (find(g_v_as.begin(), g_v_as.end(), as2) == g_v_as.end())
         g_v_as.push_back(as2);
 }
 
@@ -533,7 +625,7 @@ void conner2as_rt(const conner & rt_conner)
     }
     action_space as(conner(as_left_x, as_bottle_y),rt_conner.x - as_left_x,
                     rt_conner.y - as_bottle_y );
-    if (find(g_v_as.begin(), g_v_as_.end(), as) == g_v_as.end())
+    if (find(g_v_as.begin(), g_v_as.end(), as) == g_v_as.end())
         g_v_as.push_back(as);
 
     // b1 先向左扩展，先寻找左边界，即左下角的x坐标
@@ -563,7 +655,7 @@ void conner2as_rt(const conner & rt_conner)
     }
     action_space as2(conner(as_left_x, as_bottle_y),rt_conner.x - as_left_x,
                     rt_conner.y - as_bottle_y );
-    if (find(g_v_as.begin(), g_v_as_.end(), as2) == g_v_as.end())
+    if (find(g_v_as.begin(), g_v_as.end(), as2) == g_v_as.end())
         g_v_as.push_back(as2);
 }
 
@@ -588,7 +680,7 @@ void conner2as_rb(const conner & rb_conner)
     for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
     {
         // 寻找满足条件的x坐标最大的
-        if (it->get_x() < rt_conner.x && it->pt_top.y > rb_conner.y
+        if (it->get_x() < rb_conner.x && it->pt_top.y > rb_conner.y
             && it->pt_bottle.y < as_top_y )
         {
             if(as_left_x < it->get_x() )
@@ -597,7 +689,7 @@ void conner2as_rb(const conner & rb_conner)
     }
     action_space as( conner(as_left_x, rb_conner.y),rb_conner.x - as_left_x,
                      as_top_y - rb_conner.y);
-    if (find(g_v_as.begin(), g_v_as_.end(), as) == g_v_as.end())
+    if (find(g_v_as.begin(), g_v_as.end(), as) == g_v_as.end())
         g_v_as.push_back(as);
 
     // b1 先向左扩展，寻找左上角的x坐标
@@ -626,7 +718,7 @@ void conner2as_rb(const conner & rb_conner)
     }
     action_space as2( conner(as_left_x, rb_conner.y),rb_conner.x - as_left_x,
                      as_top_y - rb_conner.y);
-    if (find(g_v_as.begin(), g_v_as_.end(), as2) == g_v_as.end())
+    if (find(g_v_as.begin(), g_v_as.end(), as2) == g_v_as.end())
         g_v_as.push_back(as2);    
 }
 
@@ -733,7 +825,7 @@ void generate_conners(vector<rectangle>::iterator i2chonse_rec)
         find_conner_vline2downline(*it,downl);
     }
 
-    for (vector<Hline>::iretator it = g_v_hline.begin(); it != g_v_hline.end(); ++it)
+    for (vector<Hline>::iterator it = g_v_hline.begin(); it != g_v_hline.end(); ++it)
     {
         find_conner_hline2leftline(*it,leftl);
         find_conner_hline2rightline(*it,rightl);
@@ -744,7 +836,7 @@ void generate_conners(vector<rectangle>::iterator i2chonse_rec)
 
 // 寻找被矩形块 i2chonse_rec冲突的动作空间
 // 并且把这几个动作空间的实角添加到 生成动作空间的角集合中
-void find_confilict_as(vector<rectangle>::iterator i2chonse_rec)
+void find_conflict_as(vector<rectangle>::iterator i2chonse_rec)
 {
     rectangle_conflict rec_conflict(i2chonse_rec->left_bottle,i2chonse_rec->width,
                                     i2chonse_rec->height);
@@ -773,6 +865,7 @@ void find_confilict_as(vector<rectangle>::iterator i2chonse_rec)
 
 void update_action_space()
 {
+    // 由角生成动作空间
     for (vector<conner>::iterator it = g_v_conner2space.begin();
          it != g_v_conner2space.end()  ; ++it)
     {
@@ -784,5 +877,16 @@ void update_action_space()
         case RIGHT_TOP:   conner2as_rt(*it);break;
         }
     }
+
+    // 清除和小矩形重叠的动作空间
+    for (vector<action_space>::iterator it = g_v_as_conflict.begin(); it != g_v_as_conflict.end(); it++)
+        g_v_as.erase(it);
 }
 
+// 输出最后数据
+void output_data()
+{
+    ofstream ofile("output.txt");
+    for (vector<rectangle>::iterator it = g_v_rec_done.begin(); it != g_v_rec_done.end(); it++)
+        ofile<<it->width<<" "<<it->height<<"   ("<<it->left_bottle.x<<" , "<<it->left_bottle.y<<")"<<endl;
+}

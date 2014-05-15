@@ -1,6 +1,6 @@
-pack:rec_packing.o
-	g++ -o pack rec_packing.o
-rec_packing.o:rec_packing.cpp
-	g++ -c rec_packing.cpp
+pack:main.o
+	g++ -o pack main.o
+main.o:main.cpp
+	g++ -c main.cpp
 clean:
 	rm *~ *.o

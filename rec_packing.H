@@ -68,13 +68,7 @@ class conner
 public:
     conner(int _x , int _y ,int _is_valid=0, int _conner_type = -1):
         x(_x),y(_y),is_valid(_is_valid),conner_type(_conner_type){}
-    void set_conner(int _x ,int _y);
 
-    // 更新角的类型
-    void update_conner_type(const vector<rectangle> & vec_rec);
-
-    // 判断点是否在举行rec内部
-    bool is_belong2rec(const rectangle & rec);
     bool operator==(const conner & _cn)
         {
             if (x == _cn.x && y == _cn.y)
@@ -182,16 +176,7 @@ public:
             reverse_mode = (reverse_mode + 1)%2;
         }
     
-
-    void set_rectangle(int _lb_x, int _lb_y, int _width , int _height)
-        {
-            left_bottle.x = _lb_x;
-            left_bottle.y = _lb_y;
-            right_top.x = _lb_x + _width;
-            right_top.y = _lb_y + _height;
-        }
-
-    double get_erea() // 面积
+    int  get_erea() // 面积
         { return width * height ;}
 
     rectangle & operator=(const rectangle & _rec)
@@ -262,8 +247,18 @@ public:
         :left_bottle(_left_bottle),width(_width),height(_height) {}
 
     // 判断动作空间 ac_space 是否和 矩形块 rec_block 有重叠
-    void operator()(action_space & ac_space);
-    void set_rectangle(int _lb_x, int _lb_y, int _width,int _height);
+    void operator()(action_space & ac_space)
+        {
+            int minx = max(ac_space.left_bottle.x , rec_block.left_bottle.x);
+            int maxx = min(ac_space.right_top.x , rec_block.right_top.x );
+            int miny = max(ac_space.left_bottle.y, rec_block.left_bottle.y);
+            int maxy = min(ac_space.right_top.y , rec_block.right_top.y);
+
+            if( minx >= maxx || miny >= maxy)// not conflict
+                ac_space.is_conflict = 0;
+            else                          // action space ac_space conflict 
+                ac_space.is_conflict = 1; // with rec_block                 
+        }
 private:
     rectangle rec_block;
     
@@ -289,24 +284,11 @@ public:
     // 长度
     int get_length(){return get_rightx() - get_leftx();   } 
 
-    // 左断点x坐标
-    int get_leftx()
-        {
-            return pt_left.x;
-        }
-
-    // 右端点x坐标
-    int get_rightx()
-        {
-            return pt_right.x;
-        }
-
     // y坐标
     int get_y()
         {
             return pt_left.y;
         }
-    
     
         
     bool operator< (const Hline & hline1) const
@@ -318,9 +300,16 @@ public:
         return y > hline1.y ? 1: 0 ;
     }
 
-    bool conflict(const Hline & _hline);
-    
-
+    bool conflict(const Hline & _hline)
+     {
+         if(get_y() != _hline.get_y())
+             return 0;
+         int max_x = max(get_rightx(),_hline.get_rightx());
+         int min_x = min(get_leftx(),_hline.get_leftx());
+         if(max_x - min_x < get_length() + _hline.get_length()) // 说明有重叠
+             return 1;
+         return 0;
+     }
 };
 
 // 垂直线
@@ -366,8 +355,16 @@ public:
         return get_x() > _vline.get_x() ? 1: 0 ;
     }
 
-    bool conflict(const Vline & _vline);
-
+    bool conflict(const Vline & _vline)
+    {
+        if(get_x() != _vline.get_x())
+            return 0;
+        int max_y = max(get_topy(),_vline.get_topy() );
+        int min_y = min(get_bottley(), _vline.get_bottley() );
+        if (max_y - min_y < get_length() + _vline.get_length() )
+            return 1;
+        return 0;
+    }
 };
 
 

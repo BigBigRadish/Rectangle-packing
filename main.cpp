@@ -220,20 +220,40 @@ int  calculate_fd_p(vector<rectangle>::const_iterator i2rec,
     
     vector<Hline>::iterator ihline;
     vector<Vline>::iterator ivline;
+    int topline_mark = 0;
+    int bottleline_mark = 0 ;
+    int leftline_mark = 0;
+    int rightline_mark = 0;
     for (ihline = g_v_hline.begin(); ihline != g_v_hline.end(); ++ihline)
     {
-        if(top_line.conflict(*ihline))
+        if(top_line.conflict(*ihline) && topline_mark == 0)
+        {
             fd_p++;
-        if (bottle_line.conflict(*ihline))
+            topline_mark = 0;
+        }
+        
+        if (bottle_line.conflict(*ihline) && bottleline_mark == 0)
+        {
             fd_p++;
+            bottleline_mark = 0 ;
+        }
+        
     }
 
     for (ivline = g_v_vline.begin(); ivline != g_v_vline.end(); ++ivline)
     {
-        if(left_line.conflict(*ivline))
+        if(left_line.conflict(*ivline) && leftline_mark == 0)
+        {
             fd_p++;
-        if (right_line.conflict(*ivline))
+            leftline_mark = 0 ;
+        }
+        
+        if (right_line.conflict(*ivline) && rightline_mark == 0)
+        {
             fd_p++;
+            rightline_mark == 0;
+        }
+        
     }
     return fd_p;
 }

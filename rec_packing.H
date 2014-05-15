@@ -66,8 +66,7 @@ public:
 class conner
 {
 public:
-    conner():x(0),y(0),is_valid(0){}
-    conner(int _x , int _y ,int _is_valid=0, int _conner_type):
+    conner(int _x , int _y ,int _is_valid=0, int _conner_type = -1):
         x(_x),y(_y),is_valid(_is_valid),conner_type(_conner_type){}
     void set_conner(int _x ,int _y);
 
@@ -115,7 +114,7 @@ public:
      int place_type; // 放置类型,-1表示还未放置
                      // 取值 LEFT_BOTTLE,LEFT_TOP,RIGHT_BOTTLE, RIGHT_TOP
 
-    rectangle():left_bottle(),width(0),height(0),
+    rectangle():left_bottle(0,0),width(0),height(0),
                 reverse_mode(0),place_type(-1){    }
 
     rectangle(const conner & _left_bottle, int _width, int _height )
@@ -132,17 +131,17 @@ public:
 
     conner left_top()
         {
-            return conner(left_bottle.x,left_bottle.y + height);
+            return conner(left_bottle.x,left_bottle.y + height,LEFT_TOP);
         }
 
     conner right_top()
         {
-            return conner(left_bottle.x + width, left_bottle.y + height);
+            return conner(left_bottle.x + width, left_bottle.y + height,RIGHT_TOP);
         }
 
     conner right_bottle()
         {
-            return conner(left_bottle.x + width, left_bottle.y);
+            return conner(left_bottle.x + width, left_bottle.y,RIGHT_BOTTLE);
         }
 
     // 从左下角设置左下角坐标
@@ -240,7 +239,7 @@ public:
 class action_space :public rectangle
 {
 public:
-    action_space(const conner & _left_bottle, int _width, int _height):
+    action_space(const conner & _left_bottle, int _width=0, int _height=0):
         left_bottle(_left_bottle),width(_width),height(_height),is_conflict(0){    }
     
     bool is_conflict; // 是否被新放入的木块重叠

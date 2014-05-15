@@ -8,17 +8,22 @@
 
 #include <iostream>
 #include "rec_packing.H"
-
+#include <string>
 
 using namespace std;
 
 vector<Hline> g_v_hline; // 所有水平线
 vector<Vline> g_v_vline ; // 所有垂直线
-vector<rectangle> g_v_rec_undo ; // 未处理的木块
-vector<rectangle> g_v_rec_done ; // 已经处理的小木块
+vector<rectangle> g_v_rec_undo ; // 未处理的小矩形
+vector<rectangle> g_v_rec_done ; // 已经处理的小矩形
 vector<action_space> g_v_as ; // 动作空间
-vector<conner> g_v_new_conner; // 每次新生成的角
+vector<action_space> g_v_as_conflict ;// 保存被放入矩形影响的动作空间
+
+vector<conner> g_v_conner2space; // 每次新生成的角,新动作空间从这些角产生
+
 set<conner> g_s_conner; // 所有的实角
+
+action_space g_as(conner(0,0,0),0,0);
 
 
 
@@ -45,6 +50,8 @@ void calculate_fd(vector<rectangle>:: const_iterator i2rec,
                   vector<action_space>::const_iterator i2as,
                   fit_degree & fd);
 
+// 初始化操作
+void init();
 
 
 
@@ -53,9 +60,61 @@ int main(int arg ,char *arv[])
         
 }
 
+void init()
+{
+    // 读入矩形框，以及木块
+    read_data();
+    ifstream ifile("data.txt");
+    int rec_number;
+    ifile >> g_as.width;
+    ifile >> g_as.height;
+    g_as.left_bottle.x = 0 ;
+    g_as.left_bottle.y = 0 ;
+    ifile >> rec_number;
+    rectangle rec;
+    int i = 0 ;
+    while(!ifile.eof() && i< rec_number)
+    {
+        ifile >> rec.width;
+        ifile >> rec.height;
+        g_v_rec_undo.push_back(rec);
+    }
+    // 初始化动作空间
+    g_v_as.push_back(g_as);
+    
+    
+    // 初始化角
+    g_s_conner.insert(g_as.left_bottle );
+    g_s_conner.insert(g_as.left_top() );
+    g_s_conner.insert(g_as.right_top() );
+    g_s_conner.insert(g_as.right_bottle() );
+
+    // 初始化线
+    g_v_hline.push_back(Hline(g_as.left_top(),g_as.right_top(),DOWN_LINE));
+    g_v_hline.push_back(Hline(g_as.left_bottle,g_as.right_bottle(),UP_LINE));
+    g_v_vline.push_back(Vline(g_as.left_bottle,g_as.left_top(),RIGHT_LINE));
+    g_v_vline.push_back(Vline(g_as.right_bottle(),g_as.right_top(), LEFT_LINE));
+    
+}
+
+// 消除被覆盖的实角
+void remove_conner_blocked(const rectangle & rec)
+{
+    g_s_conner.erase(rec.left_top());
+    g_s_conner.erase(rec.right_top());
+    g_s_conner.erase(rec.left_bottle);
+    g_s_conner.erase(rec.right_bottle());
+
+    g_v_conner2space.erase(rec.left_top());
+    g_v_conner2space.erase(rec.right_top());
+    g_v_conner2space.erase(rec.left_bottle);
+    g_v_conner2space.erase(rec.right_bottle());
+
+}
 
 void deal()
 {
+    g_v_conner2space.clear();
     vector<rectangle>::iterator i2chonse_rec = g_v_rec_undo.begin();
     vector<action_space>::iterator i2chonse_as = g_v_as.begin();
     rectangle rec_chonse ;
@@ -63,16 +122,18 @@ void deal()
     
     while(chose_as_rec(i2chonse_rec,i2chonse_as))
     {
-        // 因为vector会改变，所以迭代器有可能失效，所以需要保存其对应值
+        // vector会改变，所以迭代器有可能失效，需要保存其对应值
         rec_chonse = *i2chonse_rec;
         as_chonse = *i2chonse_as ;
+
+        find_conflict_as(i2chonse_rec);
+        remove_conner_blocked(rec_chonse);
+        generate_conners(i2chonse_rec);
+        update_action_space();
         
-        
+            
         g_v_rec_done.push_back(*i2chonse_rec);
-        g_v_rec_undo.erase(i2chonse_rec);
-        
-        
-        
+        g_v_rec_undo.erase(*i2chonse_rec);
         
         
     }
@@ -199,41 +260,54 @@ void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     fit_degree fd_max ; // 本动作空间针对当前木块目前最大的fd
     rectangle rec_op = *i2rec; // 当前最优的小木块
 
-    // left bottle
-    i2rec->set_ordinate_lb(i2as->left_bottle);
-    calculate_fd(i2rec,i2as,fd_max);
-    i2as->place_type = LEFT_BOTTLE ;
-    rec_op = *i2rec;
-
-    // left top
-    i2rec->set_ordinate_lt(i2as->left_top() );
-    calculate_fd(i2rec,i2as,fd);
-    if (fd_max < fd || (fd_max == fd &&  rec_op < *i2rec ) )
+    // left bottle 是实角
+    if(g_s_conner.count(i2as->left_bottle()))
     {
-        fd_max = fd ;
+        i2rec->set_ordinate_lb(i2as->left_bottle);
+        calculate_fd(i2rec,i2as,fd_max);
+        i2as->place_type = LEFT_BOTTLE ;
         rec_op = *i2rec;
-        i2as->place_type = LEFT_TOP ;
+    }
+
+    // left top 是实角
+    if (g_s_conner.count(i2as->left_top()))
+    {
+        i2rec->set_ordinate_lt(i2as->left_top() );
+        calculate_fd(i2rec,i2as,fd);
+        if (fd_max < fd || (fd_max == fd &&  rec_op < *i2rec ) )
+        {
+            fd_max = fd ;
+            rec_op = *i2rec;
+            i2as->place_type = LEFT_TOP ;
+        }   
     }
         
-    // right bottle
-    i2rec->set_ordinate_rb(i2as->right_bottle() );
-    calculate_fd(i2rec,i2as,fd);
-    if (fd_max < fd || (fd_max == fd &&  rec_op < *i2rec ) )
+    // right bottle 是实角
+    if (g_s_conner.count(i2as->right_bottle()))
     {
-        fd_max = fd ;
-        rec_op = *i2rec;
-        i2as->place_type = RIGHT_BOTTLE ;
+        i2rec->set_ordinate_rb(i2as->right_bottle() );
+        calculate_fd(i2rec,i2as,fd);
+        if (fd_max < fd || (fd_max == fd &&  rec_op < *i2rec ) )
+        {
+            fd_max = fd ;
+            rec_op = *i2rec;
+            i2as->place_type = RIGHT_BOTTLE ;
+        }
     }
 
-    // right top
-    i2rec->set_ordinate_rt(i2as->right_top() );
-    calculate_fd(i2rec,i2as,fd);
-    if (fd_max < fd || (fd_max == fd &&  rec_op < *i2rec ) )
+    // right top 是 实角
+    if (g_s_conner.count(i2as->right_top()))
     {
-        fd_max = fd ;
-        rec_op = *i2rec;
-        i2as->place_type = RIGHT_TOP ;
+        i2rec->set_ordinate_rt(i2as->right_top() );
+        calculate_fd(i2rec,i2as,fd);
+        if (fd_max < fd || (fd_max == fd &&  rec_op < *i2rec ) )
+        {
+            fd_max = fd ;
+            rec_op = *i2rec;
+            i2as->place_type = RIGHT_TOP ;
+        }
     }
+    fd_max = fd;
     // 根据放置方式，重新定小方块的坐标
     switch( i2as->place_type)
     {
@@ -262,9 +336,9 @@ bool max_fd_of8values(const vector<rectangle>:: iterator & i2rec,
         return 0;
     
     max_fd_of4values(i2rec , i2as, fd);
+    rectangle rec_un_reverse(*i2rec);
     i2rec->rec_reverse(); // 宽高互换
     fit_degree fd_reverse ;
-    rectangle rec_un_reverse(*i2rec);
     max_fd_of4values(i2rec , i2as, fd_reverse);
     if (fd < fd_reverse ) // 如果reverse后和之前 fd相同，则优先考虑未reverse的情况
     {
@@ -281,7 +355,7 @@ bool max_fd_of8values(const vector<rectangle>:: iterator & i2rec,
 
 
 // 左下角算法
-void conner2as_lb(vector<rectangle>:: iterator i2chonse_rec,const conner & lb_conner)
+void conner2as_lb(const conner & lb_conner)
 {
     
     
@@ -345,7 +419,7 @@ void conner2as_lb(vector<rectangle>:: iterator i2chonse_rec,const conner & lb_co
 }
 
 // 左上角算法
-void conner2as_lt(vector<rectangle>:: iterator i2chonse_rec,const conner & lt_conner)
+void conner2as_lt(const conner & lt_conner)
 {
     int as_bottle_y = MIN;
     int as_right_x = MAX;
@@ -410,7 +484,7 @@ void conner2as_lt(vector<rectangle>:: iterator i2chonse_rec,const conner & lt_co
 }
 
 // 右上角算法
-void conner2as_rt(vector<rectangle>:: iterator i2chonse_rec,const conner & rt_conner)
+void conner2as_rt(const conner & rt_conner)
 {
     int as_bottle_y = MIN ;
     int as_left_x = MIN ;
@@ -474,7 +548,7 @@ void conner2as_rt(vector<rectangle>:: iterator i2chonse_rec,const conner & rt_co
 }
 
 // 右下角算法
-void conner2as_rb(vector<rectangle>:: iterator i2chonse_rec,const conner & rb_conner)
+void conner2as_rb(const conner & rb_conner)
 {
     // a1 先向上扩展，寻找上界,即左上角的y坐标
     int as_top_y = MAX ;
@@ -545,10 +619,18 @@ void find_conner_vline2downline(const Vline & vline, const Hline & down_line)
     {
         // 如果垂直线是右沿线，那么和举行块下沿线组成角为左上角
         if (vline.line_type == RIGHT_LINE && vline.get_x()!= down_line.pt_right.x)
+        {
             g_s_conner.insert(conner(vline.get_x(),down_line.get_y(),1,LEFT_TOP) );
+            g_v_conner2space.push_back(conner(vline.get_x(),down_line.get_y(),1,LEFT_TOP));
+        }
+        
         // 左沿线，右上角
         if(vline.line_type == LEFT_LINE && vline.get_x()!= down_line.pt_left.x ) 
+        {
             g_s_conner.insert(conner(vline.get_x(),down_line.get_y(),1,RIGHT_TOP) );
+            g_v_conner2space.push_back(conner(vline.get_x(),down_line.get_y(),1,RIGHT_TOP));
+        }
+        
     }
 }
 
@@ -559,10 +641,18 @@ void find_conner_vline2upline(const Vline & vline, const Hline & up_line)
     {
         // 垂直线是左沿线且不和矩形上沿线的左端点重合，右下角
         if (vline.line_type == LEFT_LINE && vline.get_x() != up_line.pt_left.x)
+        {
             g_s_conner.insert(conner(vline.get_x(),up_line.get_y(),1,RIGHT_BOTTLE) );
+            g_v_conner2space.push_back(conner(vline.get_x(),up_line.get_y(),1,RIGHT_BOTTLE) );
+        }
+        
         // 垂直线是右沿线且不和矩形上沿线的右端点重合，左下角
         if (vline.line_type == RIGHT_LINE && vline.get_x() != up_line.pt_right.x)
+        {
             g_s_conner.insert(conner(vline.get_x(),up_line.get_y(),1,LEFT_BOTTLE) );
+            g_v_conner2space.push_back( conner(vline.get_x(),up_line.get_y(),1,LEFT_BOTTLE) );
+        }
+        
     }
 }
 
@@ -573,10 +663,18 @@ void find_conner_hline2leftline(const Hline & hline, const Vline & left_line)
     {
         // 如果水平线是上沿线，则和矩形块的左沿线组成角为右下角
         if (hline.line_type == UP_LINE && hline.get_y() != left_line.pt_top.y)
+        {
             g_s_conner.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_BOTTLE));
+            g_v_conner2space.push_back(conner(left_line.get_x(),hline.get_y(),1,RIGHT_BOTTLE));
+
+        }
         // 如果水平线是下沿线，则和矩形块的左沿线组成角为右上角
         if (hline.line_type == DOWN_LINE && hline.get_y() != left_line.pt_bottle.y )
+        {
             g_s_conner.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_TOP));
+            g_v_conner2space.push_back(conner(left_line.get_x(),hline.get_y(),1,RIGHT_TOP));
+        }
+        
     }
 }
 
@@ -587,16 +685,22 @@ void find_conner_hline2rightline(const Hline & hline, const Vline & right_line)
     {
         // 水平线是上沿线，且不和当前矩形右沿线的上端点重合，左下角
         if (hline.line_type == UP_LINE && hline.get_y() != right_line.pt_top.y )
+        {
             g_s_conner.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_BOTTLE ));
+            g_v_conner2space.push_back(conner(right_line.get_x(), hline.get_y(),1,LEFT_BOTTLE ));
+        }
         // 水平线是下沿线，且不和当前矩形右沿线的下端点重合，左上角
         if (hline.line_type == DOWN_LINE && hline.get_y() != right_line.pt_bottle.y)
+        {
             g_s_conner.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_TOP ));
+            g_v_conner2space.push_back(conner(right_line.get_x(), hline.get_y(),1,LEFT_TOP ));
+        }
+        
     }
 }
 
 
-void generate_conners(vector<rectangle>::iterator i2chonse_rec,
-                         vector<action_space>::iterator i2chonse_as)
+void generate_conners(vector<rectangle>::iterator i2chonse_rec)
 {
     Hline upl(i2chonse_rec->left_top(),i2chonse_rec->right_top(),UP_LINE);
     Hline downl(i2chonse_rec->left_bottle,i2chonse_rec->right_bottle(),DOWN_LINE);
@@ -617,26 +721,48 @@ void generate_conners(vector<rectangle>::iterator i2chonse_rec,
     
 }
 
-void add_new_conner(const action_space & as)
-{
-    if (as.is_conflict == 1)
-    {
-        g_v_new_conner.push_back(conner())
-    }
-}
 
-
-void find_confilict_as(vector<rectangle>::iterator i2chonse_rec,
-                       vector<action_space>::iterator i2chonse_as)
+// 寻找被矩形块 i2chonse_rec冲突的动作空间
+// 并且把这几个动作空间的实角添加到 生成动作空间的角集合中
+void find_confilict_as(vector<rectangle>::iterator i2chonse_rec)
 {
     rectangle_conflict rec_conflict(i2chonse_rec->left_bottle,i2chonse_rec->width,
                                     i2chonse_rec->height);
     for_each(g_v_as.begin(),g_v_as.end(),rec_conflict);
-    
+    g_v_as_conflict.clear();
+    for (vector<action_space>::iterator it = g_v_as.begin(); it != g_v_as.end() ; ++it)
+    {
+        // 如果此动作空间和小矩形 i2chonse_rec有交集
+        if (it->is_conflict == 1)
+        {
+            // 动作空间加入冲突动作空间集合
+            g_v_as_conflict.push_back(*it);
+            // 动作空间的实角加入 生成动作空间的角集合中
+            if (g_s_conner.count(it->left_bottle))
+                g_v_conner2space.push_back(it->left_bottle);
+            if (g_s_conner.count(it->left_top()))
+                g_v_conner2space.push_back(it->left_top());
+            if (g_s_conner.count(it->right_top()))
+                g_v_conner2space.push_back(it->right_top());
+            if (g_s_conner.count(it->right_bottle()))
+                g_v_conner2space.push_back(it->right_bottle());
+        }
+        
+    }
 }
 
-void update_action_space(vector<rectangle>::iterator i2chonse_rec,
-                         vector<action_space>::iterator i2chonse_as )
+void update_action_space()
 {
-    generate_conners()
+    for (vector<conner>::iterator it = g_v_conner2space.begin();
+         it != g_v_conner2space.end()  ; ++it)
+    {
+        switch( it->conner_type  )
+        {
+        case LEFT_BOTTLE: conner2as_lb(*it);break;
+        case LEFT_TOP:    conner2as_lt(*it);break;
+        case RIGHT_BOTTLE:conner2as_rb(*it);break;
+        case RIGHT_TOP:   conner2as_rt(*it);break;
+        }
+    }
 }
+

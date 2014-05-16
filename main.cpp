@@ -190,16 +190,27 @@ void remove_conner_blocked(rectangle & rec)
 {
     g_s_conner_blocked.clear();
     set<conner>::iterator it = g_s_conner.end();
+    // 被屏蔽的角保存下来，生成角的时候用来再次屏蔽
     if ((it = g_s_conner.find(rec.left_top()) )!= g_s_conner.end() )
     {
         g_s_conner_blocked.insert(*it);
         g_s_conner.erase(it);
     }
-    
-    g_s_conner.erase(rec.left_top() );
-    g_s_conner.erase(rec.right_top()) ;
-    g_s_conner.erase(rec.left_bottle );
-    g_s_conner.erase(rec.right_bottle());
+    if ((it = g_s_conner.find(rec.right_top()) )!= g_s_conner.end() )
+    {
+        g_s_conner_blocked.insert(*it);
+        g_s_conner.erase(it);
+    }
+    if ((it = g_s_conner.find(rec.left_bottle) )!= g_s_conner.end() )
+    {
+        g_s_conner_blocked.insert(*it);
+        g_s_conner.erase(it);
+    }
+    if ((it = g_s_conner.find(rec.right_bottle()) )!= g_s_conner.end() )
+    {
+        g_s_conner_blocked.insert(*it);
+        g_s_conner.erase(it);
+    }
 
     g_s_conner2space.erase(rec.left_top());
     g_s_conner2space.erase(rec.right_top());
@@ -272,7 +283,7 @@ bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
                 i2chonse_rec = i2rec; // 指向当前最优解的那个小方块
                 i2chonse_as = i2as ;
                 max_fd = fd;
-                cout<<"max_fd"<<max_fd.k<<i2rec->width<<" "<<i2rec->height<<endl;
+                cout<<"max_fd.k "<<max_fd.k<<"  "<<i2rec->width<<" "<<i2rec->height<<endl;
             }
         }
     }
@@ -746,14 +757,16 @@ void find_conner_vline2downline(const Vline & vline, const Hline & down_line)
         && vline.get_x() >= down_line.pt_left.x && vline.get_x() <= down_line.pt_right.x)
     {
         // 如果垂直线是右沿线，那么和举行块下沿线组成角为左上角
-        if (vline.line_type == RIGHT_LINE && vline.get_x()!= down_line.pt_right.x)
+        if (vline.line_type == RIGHT_LINE && vline.get_x()!= down_line.pt_right.x
+            && g_s_conner_blocked.count(conner(vline.get_x(),down_line.get_y(),1,LEFT_TOP) )==0 )
         {
             g_s_conner.insert(conner(vline.get_x(),down_line.get_y(),1,LEFT_TOP) );
             g_s_conner2space.insert(conner(vline.get_x(),down_line.get_y(),1,LEFT_TOP));
         }
         
         // 左沿线，右上角
-        if(vline.line_type == LEFT_LINE && vline.get_x()!= down_line.pt_left.x ) 
+        if(vline.line_type == LEFT_LINE && vline.get_x()!= down_line.pt_left.x
+            && g_s_conner_blocked.count(conner(vline.get_x(),down_line.get_y(),1,RIGHT_TOP) ) ==0) 
         {
             g_s_conner.insert(conner(vline.get_x(),down_line.get_y(),1,RIGHT_TOP) );
             g_s_conner2space.insert(conner(vline.get_x(),down_line.get_y(),1,RIGHT_TOP));
@@ -768,17 +781,19 @@ void find_conner_vline2upline(const Vline & vline, const Hline & up_line)
         && vline.get_x() >= up_line.pt_left.x && vline.get_x() <= up_line.pt_right.x )
     {
         // 垂直线是左沿线且不和矩形上沿线的左端点重合，右下角
-        if (vline.line_type == LEFT_LINE && vline.get_x() != up_line.pt_left.x)
+        if (vline.line_type == LEFT_LINE && vline.get_x() != up_line.pt_left.x
+            && g_s_conner_blocked.count(conner(vline.get_x(),up_line.get_y(),1,RIGHT_BOTTLE))==0 )
         {
             g_s_conner.insert(conner(vline.get_x(),up_line.get_y(),1,RIGHT_BOTTLE) );
             g_s_conner.insert(conner(vline.get_x(),up_line.get_y(),1,RIGHT_BOTTLE) );
         }
         
         // 垂直线是右沿线且不和矩形上沿线的右端点重合，左下角
-        if (vline.line_type == RIGHT_LINE && vline.get_x() != up_line.pt_right.x)
+        if (vline.line_type == RIGHT_LINE && vline.get_x() != up_line.pt_right.x
+            && g_s_conner_blocked.count(conner(vline.get_x(),up_line.get_y(),1,LEFT_BOTTLE))==0)
         {
             g_s_conner.insert(conner(vline.get_x(),up_line.get_y(),1,LEFT_BOTTLE) );
-            g_s_conner2space.inset(conner(vline.get_x(),up_line.get_y(),1,LEFT_BOTTLE) );
+            g_s_conner2space.insert(conner(vline.get_x(),up_line.get_y(),1,LEFT_BOTTLE) );
         }
         
     }
@@ -790,14 +805,16 @@ void find_conner_hline2leftline(const Hline & hline, const Vline & left_line)
         && hline.get_y() >= left_line.pt_bottle.y && hline.get_y() <= left_line.pt_top.y)
     {
         // 如果水平线是上沿线，则和矩形块的左沿线组成角为右下角
-        if (hline.line_type == UP_LINE && hline.get_y() != left_line.pt_top.y)
+        if (hline.line_type == UP_LINE && hline.get_y() != left_line.pt_top.y
+            && g_s_conner_blocked.count(conner(left_line.get_x(),hline.get_y(),1,RIGHT_BOTTLE))==0)
         {
             g_s_conner.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_BOTTLE));
             g_s_conner2space.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_BOTTLE));
 
         }
         // 如果水平线是下沿线，则和矩形块的左沿线组成角为右上角
-        if (hline.line_type == DOWN_LINE && hline.get_y() != left_line.pt_bottle.y )
+        if (hline.line_type == DOWN_LINE && hline.get_y() != left_line.pt_bottle.y
+            && g_s_conner_blocked.count(conner(left_line.get_x(),hline.get_y(),1,RIGHT_TOP))==0 )
         {
             g_s_conner.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_TOP));
             g_s_conner2space.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_TOP));
@@ -812,13 +829,15 @@ void find_conner_hline2rightline(const Hline & hline, const Vline & right_line)
         && hline.get_y() >= right_line.pt_bottle.y && hline.get_y() <= right_line.pt_top.y)
     {
         // 水平线是上沿线，且不和当前矩形右沿线的上端点重合，左下角
-        if (hline.line_type == UP_LINE && hline.get_y() != right_line.pt_top.y )
+        if (hline.line_type == UP_LINE && hline.get_y() != right_line.pt_top.y
+            && g_s_conner_blocked.count(conner(right_line.get_x(), hline.get_y(),1,LEFT_BOTTLE )) ==0)
         {
             g_s_conner.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_BOTTLE ));
             g_s_conner2space.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_BOTTLE ));
         }
         // 水平线是下沿线，且不和当前矩形右沿线的下端点重合，左上角
-        if (hline.line_type == DOWN_LINE && hline.get_y() != right_line.pt_bottle.y)
+        if (hline.line_type == DOWN_LINE && hline.get_y() != right_line.pt_bottle.y
+            && g_s_conner_blocked.count(conner(right_line.get_x(), hline.get_y(),1,LEFT_TOP )) == 0)
         {
             g_s_conner.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_TOP ));
             g_s_conner2space.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_TOP ));

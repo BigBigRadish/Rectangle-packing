@@ -17,12 +17,16 @@ vector<Hline> g_v_hline; // 所有水平线
 vector<Vline> g_v_vline ; // 所有垂直线
 vector<rectangle> g_v_rec_undo ; // 未处理的小矩形
 vector<rectangle> g_v_rec_done ; // 已经处理的小矩形
+
 vector<action_space> g_v_as ; // 动作空间
 vector<action_space> g_v_as_conflict ;// 保存被放入矩形影响的动作空间
 
-vector<conner> g_v_conner2space; // 每次新生成的角,新动作空间从这些角产生
+
 
 set<conner> g_s_conner; // 所有的实角
+set<conner> g_s_conner_blocked; // 记录当前被屏蔽的角
+set<conner> g_s_conner2space; // 每次新生成的角,新动作空间从这些角产生
+
 
 action_space g_as(conner(0,0,0),0,0);
 
@@ -30,6 +34,9 @@ action_space g_as(conner(0,0,0),0,0);
 
 const int MAX = 999999;
 const int MIN = -99999;
+
+void print_data();
+
 
 
 // 选择当前最优的放置
@@ -102,6 +109,9 @@ void generate_conners(vector<rectangle>::iterator i2chonse_rec);
 // 并且把这几个动作空间的实角添加到 生成动作空间的角集合中
 void find_conflict_as(vector<rectangle>::iterator i2chonse_rec);
 
+//
+bool is_conflicted(const action_space& as);
+
 // 更新动作空间
 void update_action_space();
 
@@ -162,10 +172,10 @@ void init()
     
     
     // 初始化角
-    g_s_conner.insert(g_as.left_bottle );
-    g_s_conner.insert(g_as.left_top() );
-    g_s_conner.insert(g_as.right_top() );
-    g_s_conner.insert(g_as.right_bottle() );
+    g_s_conner.insert(conner(g_as.left_bottle.x,g_as.left_bottle.y,1,LEFT_BOTTLE) );
+    g_s_conner.insert(conner(g_as.left_top().x,g_as.left_top().y,1,LEFT_TOP ));
+    g_s_conner.insert(conner(g_as.right_top().x,g_as.right_top().y,1,RIGHT_TOP ));
+    g_s_conner.insert(conner(g_as.right_bottle().x,g_as.right_bottle().y,1,RIGHT_BOTTLE ));
 
     // 初始化线
     g_v_hline.push_back(Hline(g_as.left_top(),g_as.right_top(),DOWN_LINE));
@@ -178,26 +188,29 @@ void init()
 // 消除被覆盖的实角
 void remove_conner_blocked(rectangle & rec)
 {
+    g_s_conner_blocked.clear();
+    set<conner>::iterator it = g_s_conner.end();
+    if ((it = g_s_conner.find(rec.left_top()) )!= g_s_conner.end() )
+    {
+        g_s_conner_blocked.insert(*it);
+        g_s_conner.erase(it);
+    }
+    
     g_s_conner.erase(rec.left_top() );
     g_s_conner.erase(rec.right_top()) ;
     g_s_conner.erase(rec.left_bottle );
     g_s_conner.erase(rec.right_bottle());
 
-    g_v_conner2space.erase(remove(g_v_conner2space.begin(),g_v_conner2space.end(),rec.left_top()),
-                           g_v_conner2space.end() );
-    g_v_conner2space.erase(remove(g_v_conner2space.begin(),g_v_conner2space.end(),rec.right_top()),
-                           g_v_conner2space.end() );
-    g_v_conner2space.erase(remove(g_v_conner2space.begin(),g_v_conner2space.end(),rec.left_bottle),
-                           g_v_conner2space.end() );
-    g_v_conner2space.erase(remove(g_v_conner2space.begin(),g_v_conner2space.end(),rec.right_bottle()),
-                           g_v_conner2space.end() );
-
+    g_s_conner2space.erase(rec.left_top());
+    g_s_conner2space.erase(rec.right_top());
+    g_s_conner2space.erase(rec.left_bottle);
+    g_s_conner2space.erase(rec.right_bottle());
 }
 
 
 void deal()
 {
-    g_v_conner2space.clear();
+    g_s_conner2space.clear();
     vector<rectangle>::iterator i2chonse_rec = g_v_rec_undo.begin();
     vector<action_space>::iterator i2chonse_as = g_v_as.begin();
     rectangle rec_chonse ;
@@ -215,9 +228,13 @@ void deal()
         remove_conner_blocked(rec_chonse);
         generate_conners(i2chonse_rec);
         update_action_space();
-        
+
         g_v_rec_done.push_back(*i2chonse_rec);
         g_v_rec_undo.erase(i2chonse_rec);
+
+        // test info
+        print_data();
+
     }
     output_data();
 }
@@ -248,7 +265,6 @@ bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
             if(!max_fd_of8values(i2rec,i2as,fd))
                 continue;
             finded = 1;
-            cout<<"fd.k:"<<fd.k<<endl;
             if(max_fd < fd || (fd == max_fd && *i2rec > rec_chosen) )
             {
                 rec_chosen = *i2rec ;  // 由于小方块在迭代过程中会被改变，所以保存当前最优解的值
@@ -733,14 +749,14 @@ void find_conner_vline2downline(const Vline & vline, const Hline & down_line)
         if (vline.line_type == RIGHT_LINE && vline.get_x()!= down_line.pt_right.x)
         {
             g_s_conner.insert(conner(vline.get_x(),down_line.get_y(),1,LEFT_TOP) );
-            g_v_conner2space.push_back(conner(vline.get_x(),down_line.get_y(),1,LEFT_TOP));
+            g_s_conner2space.insert(conner(vline.get_x(),down_line.get_y(),1,LEFT_TOP));
         }
         
         // 左沿线，右上角
         if(vline.line_type == LEFT_LINE && vline.get_x()!= down_line.pt_left.x ) 
         {
             g_s_conner.insert(conner(vline.get_x(),down_line.get_y(),1,RIGHT_TOP) );
-            g_v_conner2space.push_back(conner(vline.get_x(),down_line.get_y(),1,RIGHT_TOP));
+            g_s_conner2space.insert(conner(vline.get_x(),down_line.get_y(),1,RIGHT_TOP));
         }
         
     }
@@ -755,14 +771,14 @@ void find_conner_vline2upline(const Vline & vline, const Hline & up_line)
         if (vline.line_type == LEFT_LINE && vline.get_x() != up_line.pt_left.x)
         {
             g_s_conner.insert(conner(vline.get_x(),up_line.get_y(),1,RIGHT_BOTTLE) );
-            g_v_conner2space.push_back(conner(vline.get_x(),up_line.get_y(),1,RIGHT_BOTTLE) );
+            g_s_conner.insert(conner(vline.get_x(),up_line.get_y(),1,RIGHT_BOTTLE) );
         }
         
         // 垂直线是右沿线且不和矩形上沿线的右端点重合，左下角
         if (vline.line_type == RIGHT_LINE && vline.get_x() != up_line.pt_right.x)
         {
             g_s_conner.insert(conner(vline.get_x(),up_line.get_y(),1,LEFT_BOTTLE) );
-            g_v_conner2space.push_back( conner(vline.get_x(),up_line.get_y(),1,LEFT_BOTTLE) );
+            g_s_conner2space.inset(conner(vline.get_x(),up_line.get_y(),1,LEFT_BOTTLE) );
         }
         
     }
@@ -777,14 +793,14 @@ void find_conner_hline2leftline(const Hline & hline, const Vline & left_line)
         if (hline.line_type == UP_LINE && hline.get_y() != left_line.pt_top.y)
         {
             g_s_conner.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_BOTTLE));
-            g_v_conner2space.push_back(conner(left_line.get_x(),hline.get_y(),1,RIGHT_BOTTLE));
+            g_s_conner2space.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_BOTTLE));
 
         }
         // 如果水平线是下沿线，则和矩形块的左沿线组成角为右上角
         if (hline.line_type == DOWN_LINE && hline.get_y() != left_line.pt_bottle.y )
         {
             g_s_conner.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_TOP));
-            g_v_conner2space.push_back(conner(left_line.get_x(),hline.get_y(),1,RIGHT_TOP));
+            g_s_conner2space.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_TOP));
         }
         
     }
@@ -799,13 +815,13 @@ void find_conner_hline2rightline(const Hline & hline, const Vline & right_line)
         if (hline.line_type == UP_LINE && hline.get_y() != right_line.pt_top.y )
         {
             g_s_conner.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_BOTTLE ));
-            g_v_conner2space.push_back(conner(right_line.get_x(), hline.get_y(),1,LEFT_BOTTLE ));
+            g_s_conner2space.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_BOTTLE ));
         }
         // 水平线是下沿线，且不和当前矩形右沿线的下端点重合，左上角
         if (hline.line_type == DOWN_LINE && hline.get_y() != right_line.pt_bottle.y)
         {
             g_s_conner.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_TOP ));
-            g_v_conner2space.push_back(conner(right_line.get_x(), hline.get_y(),1,LEFT_TOP ));
+            g_s_conner2space.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_TOP ));
         }
         
     }
@@ -818,7 +834,11 @@ void generate_conners(vector<rectangle>::iterator i2chonse_rec)
     Hline downl(i2chonse_rec->left_bottle,i2chonse_rec->right_bottle(),DOWN_LINE);
     Vline leftl(i2chonse_rec->left_bottle, i2chonse_rec->left_top() ,LEFT_LINE);
     Vline rightl(i2chonse_rec->right_bottle(), i2chonse_rec->right_top() ,RIGHT_LINE);
-
+    // 矩形块的4条线加入线集合中
+    g_v_hline.push_back(upl);
+    g_v_hline.push_back(downl);
+    g_v_vline.push_back(leftl);
+    g_v_vline.push_back(rightl);
     for (vector<Vline>::iterator it = g_v_vline.begin(); it != g_v_vline.end(); ++it)
     {
         find_conner_vline2upline(*it,upl);
@@ -851,13 +871,13 @@ void find_conflict_as(vector<rectangle>::iterator i2chonse_rec)
             g_v_as_conflict.push_back(*it);
             // 动作空间的实角加入 生成动作空间的角集合中
             if (g_s_conner.count(it->left_bottle))
-                g_v_conner2space.push_back(it->left_bottle);
+                g_s_conner2space.insert(it->left_bottle);
             if (g_s_conner.count(it->left_top()))
-                g_v_conner2space.push_back(it->left_top());
+                g_s_conner2space.insert(it->left_top());
             if (g_s_conner.count(it->right_top()))
-                g_v_conner2space.push_back(it->right_top());
+                g_s_conner2space.insert(it->right_top());
             if (g_s_conner.count(it->right_bottle()))
-                g_v_conner2space.push_back(it->right_bottle());
+                g_s_conner2space.insert(it->right_bottle());
         }
         
     }
@@ -866,8 +886,8 @@ void find_conflict_as(vector<rectangle>::iterator i2chonse_rec)
 void update_action_space()
 {
     // 由角生成动作空间
-    for (vector<conner>::iterator it = g_v_conner2space.begin();
-         it != g_v_conner2space.end()  ; ++it)
+    for (set<conner>::iterator it = g_s_conner2space.begin();
+         it != g_s_conner2space.end()  ; ++it)
     {
         switch( it->conner_type  )
         {
@@ -879,8 +899,11 @@ void update_action_space()
     }
 
     // 清除和小矩形重叠的动作空间
-    for (vector<action_space>::iterator it = g_v_as_conflict.begin(); it != g_v_as_conflict.end(); it++)
-        g_v_as.erase(it);
+    g_v_as.erase( remove_if(g_v_as.begin(),g_v_as.end(),is_conflicted),
+                  g_v_as.end() );
+    // for (vector<action_space>::iterator it = g_v_as_conflict.begin(); it != g_v_as_conflict.end(); it++)
+    //     g_v_as.erase()
+    //     g_v_as.erase(it);
 }
 
 // 输出最后数据
@@ -889,4 +912,41 @@ void output_data()
     ofstream ofile("output.txt");
     for (vector<rectangle>::iterator it = g_v_rec_done.begin(); it != g_v_rec_done.end(); it++)
         ofile<<it->width<<" "<<it->height<<"   ("<<it->left_bottle.x<<" , "<<it->left_bottle.y<<")"<<endl;
+}
+
+
+// test func
+void print_data()
+{
+    cout<<"rec done:"<<endl;
+    for (vector<rectangle>::iterator it = g_v_rec_done.begin(); it != g_v_rec_done.end(); it++)
+        cout<<it->width<<" "<<it->height<<"   ("<<it->left_bottle.x<<" , "<<
+            it->left_bottle.y<<")"<<" "<<it->reverse_mode<<endl;
+    cout<<"as info:"<<endl;
+    for (vector<action_space>::iterator it = g_v_as.begin(); it != g_v_as.end(); it++)
+        cout<<"x: "<<it->left_bottle.x<<" y:"<<it->left_bottle.y<<
+            " width:"<<it->width<<" height:"<<it->height<<endl;
+    cout<<"conner:"<<endl;
+    for (set<conner>::iterator it = g_s_conner.begin(); it != g_s_conner.end() ; ++it)
+    {
+        cout<<"x:"<<it->x<<" y:"<<it->y<<" conner type:";
+        switch(it->conner_type)
+        {
+        case LEFT_BOTTLE:cout<<" lb ";            break;
+        case LEFT_TOP:cout<<" lt";            break;
+        case RIGHT_TOP:cout<<" rt";
+            break;
+        case RIGHT_BOTTLE:cout<<" rb";
+            break;
+        }
+        cout<<endl;
+    }
+    
+}
+
+bool is_conflicted(const action_space& as)
+{
+    if (as.is_conflict)
+        return 1;
+    return 0;
 }

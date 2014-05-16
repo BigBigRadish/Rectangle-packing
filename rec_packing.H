@@ -68,6 +68,8 @@ class conner
 public:
     conner(int _x , int _y ,int _is_valid=0, int _conner_type = -1):
         x(_x),y(_y),is_valid(_is_valid),conner_type(_conner_type){}
+    conner(const conner & _cn)
+        :x(_cn.x),y(_cn.y),is_valid(_cn.is_valid),conner_type (_cn.conner_type ){}
 
     bool operator==(const conner & _cn)
         {
@@ -76,6 +78,13 @@ public:
             else
                 return 0;
         }
+    conner & operator=(const conner & _cn)
+    {
+        x = _cn.x;
+        y = _cn.y;
+        is_valid = _cn.is_valid;
+        conner_type = _cn.conner_type;
+    }
     bool operator <(const conner & _cn) const
         {
             if (x < _cn.x)
@@ -122,6 +131,15 @@ public:
         :left_bottle(_rec.left_bottle),width(_rec.width),height(_rec.height),
          reverse_mode(_rec.reverse_mode),place_type(_rec.place_type)                                      
     {    }
+
+    rectangle & operator=(const rectangle & _rec)
+    {
+        left_bottle = _rec.left_bottle;
+        width = _rec.width;
+        height = _rec.height;
+        reverse_mode = _rec.reverse_mode ;
+        place_type = _rec.place_type;
+    }
 
     conner  left_top() const
         {
@@ -179,14 +197,6 @@ public:
     int  get_erea() // 面积
         { return width * height ;}
 
-    rectangle & operator=(const rectangle & _rec)
-    {
-        width = _rec.width;
-        height = _rec.height;
-        place_type = _rec.place_type;
-        reverse_mode = _rec.reverse_mode;
-        left_bottle = _rec.left_bottle;
-    }
     
     // 穴度相等,比较其它：面积,长边长，矮边长，左下角x,y
     // trur表示 优于 _rec
@@ -228,7 +238,13 @@ public:
     action_space():rectangle(0,0){    }
     action_space(const conner & _left_bottle, int _width=0, int _height=0):
         rectangle(_left_bottle,_width,_height),is_conflict(0){    }
-    
+    action_space(const action_space & as):
+        rectangle(as.left_bottle,as.width,as.height){    }
+    // action_space & operator=(const action_space & as)
+    // {
+        
+    // }
+                                          
     bool is_conflict; // 是否被新放入的木块重叠
     bool operator==(const action_space & _as)
         {
@@ -247,7 +263,7 @@ class rectangle_conflict
 public:
     rectangle_conflict(const conner & _left_bottle,int _width,int _height)
         :rec_block(_left_bottle,_width,_height){    }
-
+    
     // 判断动作空间 ac_space 是否和 矩形块 rec_block 有重叠
     void operator()(action_space & ac_space)
         {
@@ -282,7 +298,8 @@ public:
         :pt_left(_pt_left),pt_right(_pt_right),isblock(0),line_type(_line_type)
         {
         }
-    
+    Hline(const Hline & hl):
+        pt_left(hl.pt_left),pt_right(hl.pt_right),isblock(hl.isblock),line_type(hl.line_type){}
     // 长度
     int get_length() const {return pt_right.x -pt_left.x   ;} 
 
@@ -326,7 +343,11 @@ public:
         :pt_bottle(_pt_bottle),pt_top(_pt_top),isblock(0),line_type(_line_type)
         {
         }
-    
+    Vline(const Vline & vl):
+        pt_bottle(vl.pt_bottle),pt_top(vl.pt_top),isblock(vl.isblock),line_type(vl.line_type)
+        {
+            
+        }
     // 长度
     int get_length() const {return pt_top.y - pt_bottle.y;   } 
 

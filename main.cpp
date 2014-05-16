@@ -13,17 +13,28 @@
 
 using namespace std;
 
+
+
 vector<Hline> g_v_hline; // 所有水平线
 vector<Vline> g_v_vline ; // 所有垂直线
+vector<Hline> g_v_hline_backup; // 所有水平线
+vector<Vline> g_v_vline_backup ; // 所有垂直线
+
 vector<rectangle> g_v_rec_undo ; // 未处理的小矩形
 vector<rectangle> g_v_rec_done ; // 已经处理的小矩形
 
+
+
+vector<action_space> g_v_as_backup; // 因为要计算平整度，所以备份动作空间
 vector<action_space> g_v_as ; // 动作空间
 vector<action_space> g_v_as_conflict ;// 保存被放入矩形影响的动作空间
 
 
 
+
 set<conner> g_s_conner; // 所有的实角
+set<conner> g_s_conner_backup; // 平整度备份
+
 set<conner> g_s_conner_blocked; // 记录当前被屏蔽的角
 set<conner> g_s_conner2space; // 每次新生成的角,新动作空间从这些角产生
 
@@ -49,19 +60,19 @@ void update_action_space(vector<rectangle>::iterator i2chonse_rec,
 
 // 计算穴度
 // 确保不该边 i2rec 对应的值
-void calculate_fd(vector<rectangle>:: const_iterator i2rec,
-                  vector<action_space>::const_iterator i2as,
+void calculate_fd(vector<rectangle>:: iterator i2rec,
+                  vector<action_space>::iterator i2as,
                   fit_degree & fd);
 
 // 计算贴边数
-int calculate_fd_k(vector<rectangle>::const_iterator i2rec,
-                   vector<action_space>::const_iterator i2as);
+int calculate_fd_k(vector<rectangle>::iterator i2rec,
+                   vector<action_space>::iterator i2as);
 
 
 // 计算平整度
 // 没有采用剩余动作个数
-double calculate_fd_s(vector<rectangle>::const_iterator i2rec,
-                      vector<action_space>::const_iterator i2as);
+int calculate_fd_s(vector<rectangle>::iterator i2rec,
+                      vector<action_space>::iterator i2as);
 
 
 // 求出木块 i2rec 在动作空间i2as的4个位置中最忧位置
@@ -137,6 +148,18 @@ void output_data();
 
 int main(int arg ,char *arv[])
 {
+    vector<int> iv;
+    iv.reserve(100);
+    vector<int> iv2;
+    iv2.reserve(10);
+    iv.push_back(1);
+    iv2.push_back(2);
+    cout<<&iv[0]<<endl;
+    
+    iv = iv2;
+    cout<<&iv[0]<<endl;
+    
+    
     init();
     
     deal();
@@ -165,7 +188,12 @@ void init()
         g_v_rec_undo.push_back(rec);
     }
     cout<<"rec size:"<<g_v_rec_undo.size()<<endl;
-    
+
+
+    // 预分配空间
+    // 否则会导致 chose_as_rec 迭代时候，迭代器失效，因为
+    g_v_as.reserve(1000);
+    g_v_as_backup.reserve(1000);
 
     // 初始化动作空间
     g_v_as.push_back(g_as);
@@ -221,7 +249,6 @@ void remove_conner_blocked(rectangle & rec)
 
 void deal()
 {
-    g_s_conner2space.clear();
     vector<rectangle>::iterator i2chonse_rec = g_v_rec_undo.begin();
     vector<action_space>::iterator i2chonse_as = g_v_as.begin();
     rectangle rec_chonse ;
@@ -230,6 +257,9 @@ void deal()
     while(chose_as_rec(i2chonse_rec,i2chonse_as))
     {
         // vector会改变，所以迭代器有可能失效，需要保存其对应值
+        cout<<"begin this chonsen:"<<endl;
+        print_data();
+
         cout<<"chonse it"<<i2chonse_rec->width<<" "<<i2chonse_rec->height<<endl;
         
         rec_chonse = *i2chonse_rec;
@@ -244,6 +274,8 @@ void deal()
         g_v_rec_undo.erase(i2chonse_rec);
 
         // test info
+        cout<<"end this chonsen:"<<endl;
+        
         print_data();
 
     }
@@ -272,10 +304,12 @@ bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
     {
         for (; i2rec != g_v_rec_undo.end() ; ++i2rec) // 迭代外部矩形块
         {
-            cout<<"begin test rec:"<<i2rec->width<<" "<<i2rec->height<<endl;
+            cout<<"begin test rec:"<<i2rec->width<<" "<<i2rec->height<<
+                " as:"<<i2as->width<<" "<<i2as->height<<" as size"<<g_v_as.size();
             if(!max_fd_of8values(i2rec,i2as,fd))
                 continue;
             finded = 1;
+            cout<<" fd.k"<<fd.k<<endl;
             if(max_fd < fd || (fd == max_fd && *i2rec > rec_chosen) )
             {
                 rec_chosen = *i2rec ;  // 由于小方块在迭代过程中会被改变，所以保存当前最优解的值
@@ -298,8 +332,8 @@ bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
 }
 
 // 计算贴边数
-int calculate_fd_k(vector<rectangle>::const_iterator i2rec,
-                          vector<action_space>::const_iterator i2as)
+int calculate_fd_k(vector<rectangle>::iterator i2rec,
+                          vector<action_space>::iterator i2as)
 {
     int fd_k = 0 ;
     if(i2rec->width == i2as->width )
@@ -315,18 +349,45 @@ int calculate_fd_k(vector<rectangle>::const_iterator i2rec,
 
 // 计算平整度
 // 没有采用剩余动作个数
-double calculate_fd_s(vector<rectangle>::const_iterator i2rec,
-                      vector<action_space>::const_iterator i2as)
+int calculate_fd_s(vector<rectangle>::iterator i2rec,
+                      vector<action_space>::iterator i2as)
 {
-    double di = 0 ;
-    di = min(i2as->width - i2rec->width,i2as->height - i2rec->height);
-    return di/(i2rec->width + i2rec->height);
+    rectangle rec_chonse;
+    action_space as_chonse;
+    cout<<"fd_s:width:"<<i2as->width<<endl;
+    // backup
+    g_s_conner_backup = g_s_conner;
+    g_v_as_backup = g_v_as;
+    // g_v_as_backup.clear();
+    
+    g_v_hline_backup = g_v_hline;
+    g_v_vline_backup = g_v_vline;
+
+    rec_chonse = *i2rec;
+    as_chonse = *i2as;
+    find_conflict_as(i2rec);
+    remove_conner_blocked(rec_chonse);
+    generate_conners(i2rec);
+    update_action_space();
+    
+    int s = g_v_as.size();
+
+    // restor
+    g_v_as = g_v_as_backup;
+    cout<<g_v_as[0].width<<endl;
+    cout<<"i2as:"<<i2as->width<<endl;
+    
+    g_s_conner = g_s_conner_backup;
+    g_v_hline = g_v_hline_backup;
+    g_v_vline = g_v_vline_backup;
+
+    return s;
 }
 
 
 // 计算它贴边数
-int  calculate_fd_p(vector<rectangle>::const_iterator i2rec,
-                          vector<action_space>::const_iterator i2as)
+int  calculate_fd_p(vector<rectangle>::iterator i2rec,
+                          vector<action_space>::iterator i2as)
 {
     int fd_p = 0;
     Hline top_line(i2rec->left_top(),i2rec->right_top(),UP_LINE);
@@ -377,8 +438,8 @@ int  calculate_fd_p(vector<rectangle>::const_iterator i2rec,
 
 
 // 计算当前放置下的fd
-void calculate_fd(vector<rectangle>:: const_iterator i2rec,
-                  vector<action_space>::const_iterator i2as,
+void calculate_fd(vector<rectangle>:: iterator i2rec,
+                  vector<action_space>::iterator i2as,
                   fit_degree & fd)
 {
     fd.k = calculate_fd_k(i2rec,i2as);
@@ -393,7 +454,6 @@ void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
             const vector<action_space>::iterator & i2as,
             fit_degree & fd)
 {
-//    cout<<"4value"<<endl;
     
     fit_degree fd_max ; // 本动作空间针对当前木块目前最大的fd
     rectangle rec_op = *i2rec; // 当前最优的小木块
@@ -411,7 +471,9 @@ void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     if (g_s_conner.count(i2as->left_top()))
     {
         i2rec->set_ordinate_lt(i2as->left_top() );
+        cout<<"before cal"<<i2as->width<<endl;
         calculate_fd(i2rec,i2as,fd);
+        cout<<"after cal"<<i2as->width<<endl;
         if (fd_max < fd || (fd_max == fd &&   *i2rec > rec_op) )
         {
             fd_max = fd ;
@@ -425,6 +487,7 @@ void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     {
         i2rec->set_ordinate_rb(i2as->right_bottle() );
         calculate_fd(i2rec,i2as,fd);
+        cout<<"after cal"<<i2as->width<<endl;
         if (fd_max < fd || (fd_max == fd &&  *i2rec > rec_op ) )
         {
             fd_max = fd ;
@@ -438,6 +501,7 @@ void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     {
         i2rec->set_ordinate_rt(i2as->right_top() );
         calculate_fd(i2rec,i2as,fd);
+        cout<<"after cal"<<i2as->width<<endl;
         if (fd_max < fd || (fd_max == fd &&   *i2rec > rec_op) )
         {
             fd_max = fd ;
@@ -460,6 +524,8 @@ void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     default:
         cout<<"error";
     }
+    cout<<"after 4value"<<i2as->width<<endl;
+
 }
 
 // 计算小矩形在动作空间 i2as 四个角的fd，包括水平和垂直方向
@@ -468,7 +534,6 @@ bool max_fd_of8values(const vector<rectangle>:: iterator & i2rec,
                       const vector<action_space>::iterator & i2as,
             fit_degree & fd)
 {
-    cout<<g_v_rec_done.size()<<endl;
     // 放不下,则直接返回false
     if(i2rec->width > i2as->width ||
         i2rec->height > i2as->height )
@@ -489,7 +554,10 @@ bool max_fd_of8values(const vector<rectangle>:: iterator & i2rec,
         *i2rec = rec_un_reverse;
         i2as->place_type = i2rec->place_type;
     }
+    cout<<"this test over: as width:"<<i2as->width<<endl;
+
     return 1 ;
+    
 }
 
 
@@ -877,10 +945,14 @@ void generate_conners(vector<rectangle>::iterator i2chonse_rec)
 // 并且把这几个动作空间的实角添加到 生成动作空间的角集合中
 void find_conflict_as(vector<rectangle>::iterator i2chonse_rec)
 {
+    g_v_as_conflict.clear();
+    g_s_conner2space.clear();
+
+    
     rectangle_conflict rec_conflict(i2chonse_rec->left_bottle,i2chonse_rec->width,
                                     i2chonse_rec->height);
     for_each(g_v_as.begin(),g_v_as.end(),rec_conflict);
-    g_v_as_conflict.clear();
+    set<conner>::iterator its = g_s_conner.end();
     for (vector<action_space>::iterator it = g_v_as.begin(); it != g_v_as.end() ; ++it)
     {
         // 如果此动作空间和小矩形 i2chonse_rec有交集
@@ -889,14 +961,14 @@ void find_conflict_as(vector<rectangle>::iterator i2chonse_rec)
             // 动作空间加入冲突动作空间集合
             g_v_as_conflict.push_back(*it);
             // 动作空间的实角加入 生成动作空间的角集合中
-            if (g_s_conner.count(it->left_bottle))
-                g_s_conner2space.insert(it->left_bottle);
-            if (g_s_conner.count(it->left_top()))
-                g_s_conner2space.insert(it->left_top());
-            if (g_s_conner.count(it->right_top()))
-                g_s_conner2space.insert(it->right_top());
-            if (g_s_conner.count(it->right_bottle()))
-                g_s_conner2space.insert(it->right_bottle());
+            if ((its = g_s_conner.find(it->left_bottle) ) != g_s_conner.end())
+                g_s_conner2space.insert(*its);
+            if ((its = g_s_conner.find(it->left_top()) ) != g_s_conner.end())
+                g_s_conner2space.insert(*its);
+            if ((its = g_s_conner.find(it->right_top()) ) != g_s_conner.end())
+                g_s_conner2space.insert(*its);
+            if ((its = g_s_conner.find(it->right_bottle()) ) != g_s_conner.end())
+                g_s_conner2space.insert(*its);
         }
         
     }

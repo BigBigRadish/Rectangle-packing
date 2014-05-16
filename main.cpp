@@ -148,18 +148,6 @@ void output_data();
 
 int main(int arg ,char *arv[])
 {
-    vector<int> iv;
-    iv.reserve(100);
-    vector<int> iv2;
-    iv2.reserve(10);
-    iv.push_back(1);
-    iv2.push_back(2);
-    cout<<&iv[0]<<endl;
-    
-    iv = iv2;
-    cout<<&iv[0]<<endl;
-    
-    
     init();
     
     deal();
@@ -258,8 +246,6 @@ void deal()
     {
         // vector会改变，所以迭代器有可能失效，需要保存其对应值
         cout<<"begin this chonsen:"<<endl;
-        print_data();
-
         cout<<"chonse it"<<i2chonse_rec->width<<" "<<i2chonse_rec->height<<endl;
         
         rec_chonse = *i2chonse_rec;
@@ -286,7 +272,6 @@ void deal()
 bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
                   vector<action_space>::iterator & i2chonse_as)
 {
-    cout<<"chose_as_rec"<<endl;
     if (g_v_rec_undo.size() == 0)
         return false;
     
@@ -304,12 +289,9 @@ bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
     {
         for (; i2rec != g_v_rec_undo.end() ; ++i2rec) // 迭代外部矩形块
         {
-            cout<<"begin test rec:"<<i2rec->width<<" "<<i2rec->height<<
-                " as:"<<i2as->width<<" "<<i2as->height<<" as size"<<g_v_as.size();
             if(!max_fd_of8values(i2rec,i2as,fd))
                 continue;
             finded = 1;
-            cout<<" fd.k"<<fd.k<<endl;
             if(max_fd < fd || (fd == max_fd && *i2rec > rec_chosen) )
             {
                 rec_chosen = *i2rec ;  // 由于小方块在迭代过程中会被改变，所以保存当前最优解的值
@@ -326,8 +308,6 @@ bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
         *i2chonse_rec  = rec_chosen ; // 将最优解的那个小方块设置为其最优值
         i2chonse_as->place_type = i2chonse_rec->place_type;
     }
-    cout<<"return :"<<rec_chosen.width<<" "<<rec_chosen.height<<endl;
-    
     return finded ;
 }
 
@@ -354,11 +334,10 @@ int calculate_fd_s(vector<rectangle>::iterator i2rec,
 {
     rectangle rec_chonse;
     action_space as_chonse;
-    cout<<"fd_s:width:"<<i2as->width<<endl;
+
     // backup
     g_s_conner_backup = g_s_conner;
     g_v_as_backup = g_v_as;
-    // g_v_as_backup.clear();
     
     g_v_hline_backup = g_v_hline;
     g_v_vline_backup = g_v_vline;
@@ -374,9 +353,6 @@ int calculate_fd_s(vector<rectangle>::iterator i2rec,
 
     // restor
     g_v_as = g_v_as_backup;
-    cout<<g_v_as[0].width<<endl;
-    cout<<"i2as:"<<i2as->width<<endl;
-    
     g_s_conner = g_s_conner_backup;
     g_v_hline = g_v_hline_backup;
     g_v_vline = g_v_vline_backup;
@@ -471,9 +447,7 @@ void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     if (g_s_conner.count(i2as->left_top()))
     {
         i2rec->set_ordinate_lt(i2as->left_top() );
-        cout<<"before cal"<<i2as->width<<endl;
         calculate_fd(i2rec,i2as,fd);
-        cout<<"after cal"<<i2as->width<<endl;
         if (fd_max < fd || (fd_max == fd &&   *i2rec > rec_op) )
         {
             fd_max = fd ;
@@ -487,7 +461,6 @@ void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     {
         i2rec->set_ordinate_rb(i2as->right_bottle() );
         calculate_fd(i2rec,i2as,fd);
-        cout<<"after cal"<<i2as->width<<endl;
         if (fd_max < fd || (fd_max == fd &&  *i2rec > rec_op ) )
         {
             fd_max = fd ;
@@ -501,7 +474,6 @@ void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     {
         i2rec->set_ordinate_rt(i2as->right_top() );
         calculate_fd(i2rec,i2as,fd);
-        cout<<"after cal"<<i2as->width<<endl;
         if (fd_max < fd || (fd_max == fd &&   *i2rec > rec_op) )
         {
             fd_max = fd ;
@@ -524,7 +496,6 @@ void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     default:
         cout<<"error";
     }
-    cout<<"after 4value"<<i2as->width<<endl;
 
 }
 
@@ -554,7 +525,6 @@ bool max_fd_of8values(const vector<rectangle>:: iterator & i2rec,
         *i2rec = rec_un_reverse;
         i2as->place_type = i2rec->place_type;
     }
-    cout<<"this test over: as width:"<<i2as->width<<endl;
 
     return 1 ;
     

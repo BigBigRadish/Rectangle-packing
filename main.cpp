@@ -15,6 +15,26 @@ using namespace std;
 
 
 
+// 
+set<Hline> g_s_hline4backtrack; // 回溯算法用来保存回溯前的状态
+
+set<Vline> g_s_vline4backtrack;
+
+vector<rectangle> g_v_rec_undo4backtrack;
+
+vector<rectangle> g_v_rec_done4backtrack;
+
+vector<action_space> g_v_as_backup4backtrack;
+
+set<conner> g_s_conner_backup4backtrack; //
+int g_backtrack_mark = 1 ; // 用来标记是回溯过程还是正常的迭代过程;1表示回溯
+
+// 前k个最优的占角动作
+vector<rectangle> g_v_action_kopt;
+int  g_optnumber = 10;
+
+
+
 
 
 vector<Hline> g_v_hline; // 所有水平线
@@ -22,23 +42,33 @@ vector<Vline> g_v_vline ; // 所有垂直线
 vector<Hline> g_v_hline_backup; // 所有水平线
 vector<Vline> g_v_vline_backup ; // 所有垂直线
 
+
+
+
+
 vector<rectangle> g_v_rec_undo ; // 未处理的小矩形
 vector<rectangle> g_v_rec_done ; // 已经处理的小矩形
 
 
 
+
+
 vector<action_space> g_v_as_backup; // 因为要计算平整度，所以备份动作空间
 vector<action_space> g_v_as ; // 动作空间
+
 vector<action_space> g_v_as_conflict ;// 保存被放入矩形影响的动作空间
 
 
 
 
 set<conner> g_s_conner; // 所有的实角
-set<conner> g_s_conner_backup; // 平整度备份
+set<conner> g_s_conner_backup; // 备份
+
 
 set<conner> g_s_conner_blocked; // 记录当前被屏蔽的角
 set<conner> g_s_conner2space; // 每次新生成的角,新动作空间从这些角产生
+
+// 
 
 
 action_space g_as(conner(0,0,0),0,0);
@@ -116,11 +146,11 @@ void find_conner_hline2rightline(const Hline & hline, const Vline & right_line);
 
 
 // 生成实角
-void generate_conners(vector<rectangle>::iterator i2chonse_rec);
+void generate_conners(const rectangle& rec);
 
 // 寻找被矩形块 i2chonse_rec冲突的动作空间
 // 并且把这几个动作空间的实角添加到 生成动作空间的角集合中
-void find_conflict_as(vector<rectangle>::iterator i2chonse_rec);
+void find_conflict_as(rectanglerec);
 
 //
 bool is_conflicted(const action_space& as);
@@ -130,6 +160,8 @@ void update_action_space();
 
 void deal();
 
+// 回溯算法
+void backtack();
 
 
 
@@ -253,9 +285,9 @@ void deal()
         rec_chonse = *i2chonse_rec;
         as_chonse = *i2chonse_as ;
         
-        find_conflict_as(i2chonse_rec);
+        find_conflict_as(*i2chonse_rec);
         remove_conner_blocked(rec_chonse);
-        generate_conners(i2chonse_rec);
+        generate_conners(*i2chonse_rec);
         update_action_space();
 
         g_v_rec_done.push_back(*i2chonse_rec);
@@ -269,6 +301,7 @@ void deal()
     }
     output_data();
 }
+
 
 // 选择动作空间和小木块
 bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
@@ -293,7 +326,11 @@ bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
         {
             if(!max_fd_of8values(i2rec,i2as,fd))
                 continue;
-            finded = 1;
+            finded = 1;;
+            // 
+            if (g_backtrack_mark == 1)
+                update_kopt(fd,*i2rec,*as) ;
+            
             if(max_fd < fd || (fd == max_fd && *i2rec > rec_chosen) )
             {
                 rec_chosen = *i2rec ;  // 由于小方块在迭代过程中会被改变，所以保存当前最优解的值
@@ -330,7 +367,7 @@ int calculate_fd_k(vector<rectangle>::iterator i2rec,
 }
 
 // 计算平整度
-// 没有采用剩余动作个数
+//
 int calculate_fd_s(vector<rectangle>::iterator i2rec,
                       vector<action_space>::iterator i2as)
 {
@@ -346,9 +383,9 @@ int calculate_fd_s(vector<rectangle>::iterator i2rec,
 
     rec_chonse = *i2rec;
     as_chonse = *i2as;
-    find_conflict_as(i2rec);
+    find_conflict_as(*i2rec);
     remove_conner_blocked(rec_chonse);
-    generate_conners(i2rec);
+    generate_conners(*i2rec);
     update_action_space();
     
     int s = g_v_as.size();
@@ -359,7 +396,7 @@ int calculate_fd_s(vector<rectangle>::iterator i2rec,
     g_v_hline = g_v_hline_backup;
     g_v_vline = g_v_vline_backup;
 
-    return s;
+    return 0-s;
 }
 
 
@@ -887,12 +924,12 @@ void find_conner_hline2rightline(const Hline & hline, const Vline & right_line)
 }
 
 
-void generate_conners(vector<rectangle>::iterator i2chonse_rec)
+void generate_conners(const rectangle & rec)
 {
-    Hline upl(i2chonse_rec->left_top(),i2chonse_rec->right_top(),UP_LINE);
-    Hline downl(i2chonse_rec->left_bottle,i2chonse_rec->right_bottle(),DOWN_LINE);
-    Vline leftl(i2chonse_rec->left_bottle, i2chonse_rec->left_top() ,LEFT_LINE);
-    Vline rightl(i2chonse_rec->right_bottle(), i2chonse_rec->right_top() ,RIGHT_LINE);
+    Hline upl(rec.left_top(),rec.right_top(),UP_LINE);
+    Hline downl(rec.left_bottle,rec.right_bottle(),DOWN_LINE);
+    Vline leftl(rec.left_bottle, rec.left_top() ,LEFT_LINE);
+    Vline rightl(rec.right_bottle(), rec.right_top() ,RIGHT_LINE);
     // 矩形块的4条线加入线集合中
     g_v_hline.push_back(upl);
     g_v_hline.push_back(downl);
@@ -915,19 +952,19 @@ void generate_conners(vector<rectangle>::iterator i2chonse_rec)
 
 // 寻找被矩形块 i2chonse_rec冲突的动作空间
 // 并且把这几个动作空间的实角添加到 生成动作空间的角集合中
-void find_conflict_as(vector<rectangle>::iterator i2chonse_rec)
+void find_conflict_as(const rectangle & rec)
 {
     g_v_as_conflict.clear();
     g_s_conner2space.clear();
 
     
-    rectangle_conflict rec_conflict(i2chonse_rec->left_bottle,i2chonse_rec->width,
-                                    i2chonse_rec->height);
+    rectangle_conflict rec_conflict(rec.left_bottle,rec.width,
+                                    rec.height);
     for_each(g_v_as.begin(),g_v_as.end(),rec_conflict);
     set<conner>::iterator its = g_s_conner.end();
     for (vector<action_space>::iterator it = g_v_as.begin(); it != g_v_as.end() ; ++it)
     {
-        // 如果此动作空间和小矩形 i2chonse_rec有交集
+        // 如果此动作空间和小矩形 rec有交集
         if (it->is_conflict == 1)
         {
             // 动作空间加入冲突动作空间集合
@@ -1012,4 +1049,71 @@ bool is_conflicted(const action_space& as)
     if (as.is_conflict)
         return 1;
     return 0;
+}
+
+
+void backtrack()
+{
+    vector<rectangle>::iterator i2chonse_rec = g_v_rec_undo.begin();
+    vector<action_space>::iterator i2chonse_as = g_v_as.begin();
+    rectangle rec_chonse ;
+    action_space as_chonse;
+    int area = 0 ;
+    int max_area = 0 ;
+    // 选则前 opt_number 个最优的占角动作
+    backup();
+    chose_as_rec(i2chonse_rec,i2chonse_as);
+    g_backtrack_mark = 0;
+    
+    for (vector<conner_action>::iterator it = g_v_action_kopt.begin();
+         it < g_v_action_kopt.end() ; ++it)
+    {
+        restore();
+        i2chonse_rec = find(g_v_rec_undo.begin(),g_v_rec_undo.end(),it->rec);
+        i2chonse_as = find(g_v_as.begin(),g_v_as.end(),it->as);
+        do
+        {
+            rec_chonse = *i2chonse_rec;
+            as_chonse = *i2chonse_as ;
+        
+            find_conflict_as(*i2chonse_rec);
+            remove_conner_blocked(rec_chonse);
+            generate_conners(*i2chonse_rec);
+            update_action_space();
+
+            g_v_rec_done.push_back(*i2chonse_rec);
+            g_v_rec_undo.erase(i2chonse_rec);
+        }while(chose_as_rec(i2chonse_rec,i2chone_as));
+        area = get_area();
+        
+
+    }
+    
+    
+}
+
+void update_kopt( const fit_degree & fd,
+                  const rectangle & rec,
+                  const action_space & as)
+{
+    if (g_v_action_kopt.size() <= opt_number)
+        g_v_action_kopt.push_back(conner_action(fd,rec,as));
+    
+    vector<actin_chonse>::iterator it = g_v_action_kopt.end();
+    it = min_element(g_v_action_kopt.begin(),g_v_action_kopt.end());
+    if (it->fd < fd  || (fd == it->fd && rec > it->rec) )
+    {
+        it->fd = fd;
+        it->rec = rec;
+        it->as = as;
+    }
+}
+
+int get_area()
+{
+    for (vector<rectangle>::iterator it = g_v_rec_done.begin() ;
+         it != g_v_rec_done.end() ; ++it)
+    {
+        
+    }
 }

@@ -55,7 +55,7 @@ public:
             return 0;
         }
     int k; // 贴边数
-    double s; // 平整度
+    int s; // 平整度
     int p; // 它贴边数
     
 };
@@ -84,6 +84,7 @@ public:
         y = _cn.y;
         is_valid = _cn.is_valid;
         conner_type = _cn.conner_type;
+        return *this;
     }
     bool operator <(const conner & _cn) const
         {
@@ -139,6 +140,7 @@ public:
         height = _rec.height;
         reverse_mode = _rec.reverse_mode ;
         place_type = _rec.place_type;
+        return *this
     }
 
     conner  left_top() const
@@ -379,6 +381,44 @@ public:
 };
 
 
+class conner_action
+{
+public:
+    conner_action(const fit_degree & _fd,const rectangle & _rec,const action_space & _as)
+        :fd(_fd),rec(_rec),as(_as){    }
+    bool operator<(const conner_action & _ac)
+        {
+            if (fd < _ac.fd)
+                return 1;
+            else if (fd == _ac.fd)
+            {
+                if (rec < _ac.rec)
+                    return 1;
+                else
+                    return 0 ;
+            }
+            else
+                return 0;
+        }
+    bool operator ==(const conner_action &_ac)
+        {
+            if (fd == _ac.fd && rec == _ac.rec)
+                return 1;
+            else
+                return 0;
+        }
+    conner_action & operator=(const actin_chonse & _ac)
+    {
+        fd = _ac.fd;
+        rec = _ac.rec;
+        as = _ac.as;
+        return *this;
+    }
+    fit_degree fd;
+    rectangle rec;
+    action_space as;
+    
+};
 
      
 

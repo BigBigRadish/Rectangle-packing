@@ -26,7 +26,7 @@ class fit_degree
 {
 public:
     fit_degree():k(0),s(0.0),p(0){}
-    bool operator< (const fit_degree & _fd)
+    bool operator< (const fit_degree & _fd)const
         {
             if(k < _fd.k)
                 return 1;
@@ -48,7 +48,7 @@ public:
                 return 0;
         }
     
-    bool operator== (const fit_degree & _fd)
+    bool operator== (const fit_degree & _fd) const
         {
             if(k == _fd.k && s == _fd.s && p == _fd.p)
                 return 1;
@@ -140,7 +140,7 @@ public:
         height = _rec.height;
         reverse_mode = _rec.reverse_mode ;
         place_type = _rec.place_type;
-        return *this
+        return *this;
     }
 
     conner  left_top() const
@@ -196,17 +196,17 @@ public:
             reverse_mode = (reverse_mode + 1)%2;
         }
     
-    int  get_erea() // 面积
+    int  get_area() const // 面积
         { return width * height ;}
 
     
     // 穴度相等,比较其它：面积,长边长，矮边长，左下角x,y
     // trur表示 优于 _rec
-    bool operator> ( rectangle & _rec)
+    bool operator> (const rectangle & _rec)const
         {
-            if(get_erea() > _rec.get_erea())
+            if(get_area() > _rec.get_area())
                 return 1;
-            else if( get_erea() == _rec.get_erea() ) // 面积
+            else if( get_area() == _rec.get_area() ) // 面积
             {
                 if(max(width,height ) >
                    max( _rec.width,_rec.height ))// 最长边
@@ -231,6 +231,20 @@ public:
             }
             else
                 return 0;
+        }
+    bool operator==(const rectangle & _rec)
+    {
+        if (width == _rec.width && height == _rec.height)
+            return 1;
+        else
+            return 0;
+    }
+    bool operator<( const rectangle & _rec)
+        {
+            if (*this == _rec || *this > _rec)
+                return 0;
+            else
+                return 1;
         }
 };
         
@@ -407,7 +421,7 @@ public:
             else
                 return 0;
         }
-    conner_action & operator=(const actin_chonse & _ac)
+    conner_action & operator=(const conner_action & _ac)
     {
         fd = _ac.fd;
         rec = _ac.rec;

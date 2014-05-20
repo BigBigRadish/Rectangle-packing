@@ -13,6 +13,9 @@
 
 using namespace std;
 
+void print_kopt();
+
+
 
 
 // 
@@ -110,7 +113,7 @@ int calculate_fd_s(vector<rectangle>::iterator i2rec,
 // 求出木块 i2rec 在动作空间i2as的4个位置中最忧位置
 // 并且 i2rec 的值已经被更新
 // 4 个位置是因为没有旋转
-void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
+bool  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
                        const vector<action_space>::iterator & i2as,
                        fit_degree & fd);
 
@@ -292,8 +295,8 @@ void deal()
     while(chose_as_rec(i2chonse_rec,i2chonse_as))
     {
         // vector会改变，所以迭代器有可能失效，需要保存其对应值
-        cout<<"begin this chonsen:"<<endl;
-        cout<<"chonse it"<<i2chonse_rec->width<<" "<<i2chonse_rec->height<<endl;
+//        cout<<"begin this chonsen:"<<endl;
+//        cout<<"chonse it"<<i2chonse_rec->width<<" "<<i2chonse_rec->height<<endl;
         
         rec_chonse = *i2chonse_rec;
         as_chonse = *i2chonse_as ;
@@ -307,7 +310,7 @@ void deal()
         g_v_rec_undo.erase(i2chonse_rec);
 
         // test info
-        cout<<"end this chonsen:"<<endl;
+//        cout<<"end this chonsen:"<<endl;
         
         print_data();
 
@@ -351,7 +354,7 @@ bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
                 i2chonse_rec = i2rec; // 指向当前最优解的那个小方块
                 i2chonse_as = i2as ;
                 max_fd = fd;
-                cout<<"max_fd.k "<<max_fd.k<<"  "<<i2rec->width<<" "<<i2rec->height<<endl;
+//                cout<<"max_fd.k "<<max_fd.k<<"  "<<i2rec->width<<" "<<i2rec->height<<endl;
             }
         }
     }
@@ -359,6 +362,10 @@ bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
     {
         *i2chonse_rec  = rec_chosen ; // 将最优解的那个小方块设置为其最优值
         i2chonse_as->place_type = i2chonse_rec->place_type;
+    }
+    else
+    {
+        cout<<"i not find:"<<endl;
     }
     return finded ;
 }
@@ -478,10 +485,16 @@ void calculate_fd(vector<rectangle>:: iterator i2rec,
 // 求出木块 i2rec 在动作空间i2as的4个位置中最忧位置
 // 并且 i2rec 的值已经被更新
 // 4 个位置是因为没有旋转
-void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
+bool  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
             const vector<action_space>::iterator & i2as,
             fit_degree & fd)
 {
+    // 放不下，则直接取为-1
+    if (i2rec->width > i2as->width || i2rec->height> i2as->height)
+    {
+        fd.k = -1 ;
+        return 0;
+    }
     
     fit_degree fd_max ; // 本动作空间针对当前木块目前最大的fd
     rectangle rec_op = *i2rec; // 当前最优的小木块
@@ -548,7 +561,7 @@ void  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     default:
         cout<<"error";
     }
-
+    return 1;
 }
 
 // 计算小矩形在动作空间 i2as 四个角的fd，包括水平和垂直方向
@@ -558,11 +571,17 @@ bool max_fd_of8values(const vector<rectangle>:: iterator & i2rec,
             fit_degree & fd)
 {
     // 放不下,则直接返回false
-    if(i2rec->width > i2as->width ||
-        i2rec->height > i2as->height )
-        return 0;
+    if ( min(i2rec->width,i2rec->height) > min(i2as->width,i2as->height) 
+         ||max(i2rec->width,i2rec->height)>  max(i2as->width,i2as->height) )
+        {
+            cout<<"i am as ("<<i2as->width<<","<<i2as->height;
+            cout<<")  i can not place it: ("<<i2rec->width<<","<<i2rec->height<<")";
+            
+            return 0;
+        }
     
-    max_fd_of4values(i2rec , i2as, fd);
+    bool finded = 0;
+    finded = max_fd_of4values(i2rec , i2as, fd);
     rectangle rec_un_reverse(*i2rec);
     i2rec->rec_reverse(); // 宽高互换
     fit_degree fd_reverse ;
@@ -1028,34 +1047,6 @@ void output_data()
 }
 
 
-// test func
-void print_data()
-{
-    cout<<"rec done:"<<endl;
-    for (vector<rectangle>::iterator it = g_v_rec_done.begin(); it != g_v_rec_done.end(); it++)
-        cout<<it->width<<" "<<it->height<<"   ("<<it->left_bottle.x<<" , "<<
-            it->left_bottle.y<<")"<<" "<<it->reverse_mode<<endl;
-    cout<<"as info:"<<endl;
-    for (vector<action_space>::iterator it = g_v_as.begin(); it != g_v_as.end(); it++)
-        cout<<"x: "<<it->left_bottle.x<<" y:"<<it->left_bottle.y<<
-            " width:"<<it->width<<" height:"<<it->height<<endl;
-    cout<<"conner:"<<endl;
-    for (set<conner>::iterator it = g_s_conner.begin(); it != g_s_conner.end() ; ++it)
-    {
-        cout<<"x:"<<it->x<<" y:"<<it->y<<" conner type:";
-        switch(it->conner_type)
-        {
-        case LEFT_BOTTLE:cout<<" lb ";            break;
-        case LEFT_TOP:cout<<" lt";            break;
-        case RIGHT_TOP:cout<<" rt";
-            break;
-        case RIGHT_BOTTLE:cout<<" rb";
-            break;
-        }
-        cout<<endl;
-    }
-    
-}
 
 bool is_conflicted(const action_space& as)
 {
@@ -1077,6 +1068,8 @@ void backtrack()
     // while判定条件中的chose_as_rec 仅仅用来找到前 g_optnumber个最优占角动作
     while(chose_as_rec(i2chonse_rec,i2chonse_as))
     {
+        print_kopt();
+        
         backup();
         g_backtrack_mark = 0;
 
@@ -1086,15 +1079,22 @@ void backtrack()
              it != g_v_action_kopt.end() ; ++it)
         {
             restore();
+            cout<<"rec:"<<"("<<it->rec.width <<","<<it->rec.height<<")";
+            cout<<"as:"<<"("<<it->as.width<<","<<it->as.height<<") begin:"<<endl;
             i2chonse_rec = find(g_v_rec_undo.begin(),g_v_rec_undo.end(),it->rec);
             i2chonse_as = find(g_v_as.begin(),g_v_as.end(),it->as);
             do
             {
                 update_data(i2chonse_rec,i2chonse_as);
+                print_data();
             }while(chose_as_rec(i2chonse_rec,i2chonse_as));
             area = get_area();
+            cout<<"area:"<<area<<endl;
+            print_data();
+            cout<<"end"<<endl;
             if (max_area < area)
             {
+                max_area = area;
                 rec_chonse = it->rec;
                 as_chonse = it->as;
             }
@@ -1105,6 +1105,8 @@ void backtrack()
         update_data(i2chonse_rec,i2chonse_as);
         // 回溯法完成一次占角,选择下一个
         g_backtrack_mark = 1;
+        g_v_action_kopt.clear();
+ 
     }
     
 }
@@ -1115,23 +1117,25 @@ void update_kopt( const fit_degree & fd,
 {
     if (g_v_action_kopt.size() <= g_optnumber)
         g_v_action_kopt.push_back(conner_action(fd,rec,as));
-    
-    vector<conner_action>::iterator it = g_v_action_kopt.end();
-    it = min_element(g_v_action_kopt.begin(),g_v_action_kopt.end());
-    if (it->fd < fd  || (fd == it->fd && rec > it->rec) )
+    else
     {
-        it->fd = fd;
-        it->rec = rec;
-        it->as = as;
+        vector<conner_action>::iterator it = g_v_action_kopt.end();
+        it = min_element(g_v_action_kopt.begin(),g_v_action_kopt.end());
+        if (it->fd < fd  || (fd == it->fd && rec > it->rec) )
+        {
+            it->fd = fd;
+            it->rec = rec;
+            it->as = as;
+        }
     }
 }
 
 int get_area()
 {
-    int area;
+    int area=0;
     for (vector<rectangle>::iterator it = g_v_rec_done.begin() ;
          it != g_v_rec_done.end() ; ++it)
-        area = it->get_area();
+        area += it->get_area();
     return area;
 }
 
@@ -1165,4 +1169,48 @@ void restore()
     g_v_rec_done =     g_v_rec_done4backtrack ;
     g_v_as =  g_v_as4backtrack;
     g_s_conner = g_s_conner4backtrack ; // 所有的实角
+}
+// test func
+
+
+void print_data()
+{
+    cout<<"rec undo:"<<endl;
+    for (vector<rectangle>::iterator it = g_v_rec_undo.begin(); it != g_v_rec_undo.end(); it++)
+        cout<<it->width<<" "<<it->height<<"   ("<<it->left_bottle.x<<" , "<<
+            it->left_bottle.y<<")"<<" "<<it->reverse_mode<<endl;
+    cout<<"rec done:"<<endl;
+    for (vector<rectangle>::iterator it = g_v_rec_done.begin(); it != g_v_rec_done.end(); it++)
+        cout<<it->width<<" "<<it->height<<"   ("<<it->left_bottle.x<<" , "<<
+            it->left_bottle.y<<")"<<" "<<it->reverse_mode<<endl;
+    cout<<"as info:"<<endl;
+    for (vector<action_space>::iterator it = g_v_as.begin(); it != g_v_as.end(); it++)
+        cout<<"x: "<<it->left_bottle.x<<" y:"<<it->left_bottle.y<<
+            " width:"<<it->width<<" height:"<<it->height<<endl;
+    cout<<"conner:"<<endl;
+    for (set<conner>::iterator it = g_s_conner.begin(); it != g_s_conner.end() ; ++it)
+    {
+        cout<<"x:"<<it->x<<" y:"<<it->y<<" conner type:";
+        switch(it->conner_type)
+        {
+        case LEFT_BOTTLE:cout<<" lb ";            break;
+        case LEFT_TOP:cout<<" lt";            break;
+        case RIGHT_TOP:cout<<" rt";
+            break;
+        case RIGHT_BOTTLE:cout<<" rb";
+            break;
+        }
+        cout<<endl;
+    }
+    
+}
+
+void print_kopt()
+{
+    for (vector<conner_action>::iterator it = g_v_action_kopt.begin();
+         it != g_v_action_kopt.end() ; ++it)
+    {
+        cout<<"rec:"<<"("<<it->rec.width <<","<<it->rec.height<<")";
+        cout<<"as:"<<"("<<it->as.width<<","<<it->as.height<<")"<<endl;
+    }
 }

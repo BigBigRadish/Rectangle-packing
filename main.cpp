@@ -1154,7 +1154,7 @@ void init_data()
 // 初始化动作空间
     g_v_as.clear();
     g_v_as.push_back(g_as);
-
+    
     g_v_rec_done.clear();
     
     // 初始化角

@@ -51,6 +51,7 @@ vector<Vline> g_v_vline_backup ; // 所有垂直线
 
 vector<rectangle> g_v_rec_undo ; // 未处理的小矩形
 vector<rectangle> g_v_rec_done ; // 已经处理的小矩形
+vector<rectangle> g_v_rec_scheduled;//时间调度已经加工完的小举行块
 
 
 
@@ -82,6 +83,7 @@ const int MAX = 999999;
 const int MIN = -99999;
 
 void print_data();
+void print_status_task();
 
 
 
@@ -176,10 +178,18 @@ void update_kopt( const fit_degree & fd,
 
 int get_area();
 
+// 初始化动作空间和线信息
+void init_data();
+
 
 // 选择最优的小木块和动作空间后，完成一次占角，更新数据
 void update_data(vector<rectangle>::iterator  i2chonse_rec,
                  vector<action_space>::iterator i2chonse_as);
+
+
+void task_scheduling();
+
+int update_rec_status();
 
 
     
@@ -198,7 +208,9 @@ void output_data();
 int main(int arg ,char *arv[])
 {
     init();
-    backtrack();
+//    backtrack();
+    task_scheduling();
+    
     output_data();
 //    deal();
 }
@@ -211,6 +223,7 @@ void init()
     int rec_number;
     ifile >> g_as.width;
     ifile >> g_as.height;
+    //ifile >> g_as.time;
     cout<<"the big as:"<<g_as.width<<" "<<g_as.height<<endl;
     g_as.left_bottle.x = 0 ;
     g_as.left_bottle.y = 0 ;
@@ -222,7 +235,8 @@ void init()
         i++;
         ifile >> rec.width;
         ifile >> rec.height;
-        cout<<"read:"<<rec.width<<" "<<rec.height<<endl;
+        ifile >> rec.time ;
+        cout<<"read:"<<rec.width<<" "<<rec.height<<" "<<rec.time<<endl;
         g_v_rec_undo.push_back(rec);
     }
     cout<<"rec size:"<<g_v_rec_undo.size()<<endl;
@@ -233,22 +247,7 @@ void init()
     g_v_as.reserve(1000);
     g_v_as_backup.reserve(1000);
 
-    // 初始化动作空间
-    g_v_as.push_back(g_as);
-    
-    
-    // 初始化角
-    g_s_conner.insert(conner(g_as.left_bottle.x,g_as.left_bottle.y,1,LEFT_BOTTLE) );
-    g_s_conner.insert(conner(g_as.left_top().x,g_as.left_top().y,1,LEFT_TOP ));
-    g_s_conner.insert(conner(g_as.right_top().x,g_as.right_top().y,1,RIGHT_TOP ));
-    g_s_conner.insert(conner(g_as.right_bottle().x,g_as.right_bottle().y,1,RIGHT_BOTTLE ));
-
-    // 初始化线
-    g_v_hline.push_back(Hline(g_as.left_top(),g_as.right_top(),DOWN_LINE));
-    g_v_hline.push_back(Hline(g_as.left_bottle,g_as.right_bottle(),UP_LINE));
-    g_v_vline.push_back(Vline(g_as.left_bottle,g_as.left_top(),RIGHT_LINE));
-    g_v_vline.push_back(Vline(g_as.right_bottle(),g_as.right_top(), LEFT_LINE));
-    
+    init_data();
 }
 
 // 消除被覆盖的实角
@@ -365,7 +364,7 @@ bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
     }
     else
     {
-        cout<<"i not find:"<<endl;
+//        cout<<"i not find:"<<endl;
     }
     return finded ;
 }
@@ -574,13 +573,13 @@ bool max_fd_of8values(const vector<rectangle>:: iterator & i2rec,
     if ( min(i2rec->width,i2rec->height) > min(i2as->width,i2as->height) 
          ||max(i2rec->width,i2rec->height)>  max(i2as->width,i2as->height) )
         {
-            cout<<"i am as ("<<i2as->width<<","<<i2as->height;
-            cout<<")  i can not place it: ("<<i2rec->width<<","<<i2rec->height<<")"<<endl;
+            // cout<<"i am as ("<<i2as->width<<","<<i2as->height;
+            // cout<<")  i can not place it: ("<<i2rec->width<<","<<i2rec->height<<")"<<endl;
             
             return 0;
         }
-    cout<<"i am as ("<<i2as->width<<","<<i2as->height;
-    cout<<")  i am rec: ("<<i2rec->width<<","<<i2rec->height<<")"<<endl;
+    // cout<<"i am as ("<<i2as->width<<","<<i2as->height;
+    // cout<<")  i am rec: ("<<i2rec->width<<","<<i2rec->height<<")"<<endl;
     bool finded = 0;
     finded = max_fd_of4values(i2rec , i2as, fd);
     rectangle rec_un_reverse(*i2rec);
@@ -1030,7 +1029,6 @@ void update_action_space()
         case RIGHT_TOP:   conner2as_rt(*it);break;
         }
     }
-
     // 清除和小矩形重叠的动作空间
     g_v_as.erase( remove_if(g_v_as.begin(),g_v_as.end(),is_conflicted),
                   g_v_as.end() );
@@ -1080,19 +1078,19 @@ void backtrack()
              it != g_v_action_kopt.end() ; ++it)
         {
             restore();
-            cout<<"rec:"<<"("<<it->rec.width <<","<<it->rec.height<<")";
-            cout<<"as:"<<"("<<it->as.width<<","<<it->as.height<<") begin:"<<endl;
+//            cout<<"rec:"<<"("<<it->rec.width <<","<<it->rec.height<<")";
+//            cout<<"as:"<<"("<<it->as.width<<","<<it->as.height<<") begin:"<<endl;
             i2chonse_rec = find(g_v_rec_undo.begin(),g_v_rec_undo.end(),it->rec);
             i2chonse_as = find(g_v_as.begin(),g_v_as.end(),it->as);
             do
             {
                 update_data(i2chonse_rec,i2chonse_as);
-                print_data();
+//                print_data();
             }while(chose_as_rec(i2chonse_rec,i2chonse_as));
             area = get_area();
-            cout<<"area:"<<area<<endl;
-            print_data();
-            cout<<"end"<<endl;
+//            cout<<"area:"<<area<<endl;
+//            print_data();
+//            cout<<"end"<<endl;
             if (max_area < area)
             {
                 max_area = area;
@@ -1102,17 +1100,18 @@ void backtrack()
             if (area == g_as.get_area())
                 break;
         }
+        g_backtrack_mark = 1;
+        g_v_action_kopt.clear();
+
+        // 如果面积利用率100,则直接退出
         if (area == g_as.get_area())
             break;
-        
+        // 回溯到选择前的状态，用最优的进行占角
         restore();
         i2chonse_rec = find(g_v_rec_undo.begin(),g_v_rec_undo.end(),rec_chonse);
         i2chonse_as = find(g_v_as.begin(),g_v_as.end(),as_chonse);
         update_data(i2chonse_rec,i2chonse_as);
         // 回溯法完成一次占角,选择下一个
-        g_backtrack_mark = 1;
-        g_v_action_kopt.clear();
- 
     }
     
 }
@@ -1176,18 +1175,50 @@ void restore()
     g_v_as =  g_v_as4backtrack;
     g_s_conner = g_s_conner4backtrack ; // 所有的实角
 }
+
+void task_scheduling()
+{
+    vector<rectangle>::iterator i2chonse_rec = g_v_rec_undo.begin();
+    vector<action_space>::iterator i2chonse_as = g_v_as.begin();
+    rectangle rec_chonse ;
+    action_space as_chonse;
+    int time_total = 0; // 记录总体加工时间
+    int time_this = 0; // 记录本次调度加工时间
+    while(chose_as_rec(i2chonse_rec,i2chonse_as))
+    {
+        // 用回溯法完成一次调度
+        cout<<"begin task:"<<endl;
+        print_data();
+        backtrack();
+        time_this = update_rec_status();
+        print_status_task();
+        cout<<"end task:"<<endl;
+        time_total += time_this;
+        init_data();
+     }
+    cout<<time_total<<endl;
+    
+}
+
+
 // test func
 
+void print_status_task()
+{
+    for (vector<rectangle>::iterator it = g_v_rec_scheduled.begin(); it != g_v_rec_scheduled.end(); it++)
+        cout<<it->width<<" "<<it->height<<"   ("<<it->left_bottle.x<<" , "<<
+            it->left_bottle.y<<")"<<" "<<it->reverse_mode<<endl;
+}
 
 void print_data()
 {
     cout<<"rec undo:"<<endl;
     for (vector<rectangle>::iterator it = g_v_rec_undo.begin(); it != g_v_rec_undo.end(); it++)
-        cout<<it->width<<" "<<it->height<<"   ("<<it->left_bottle.x<<" , "<<
+        cout<<it->width<<" "<<it->height<<" time:"<<it->time<<"   ("<<it->left_bottle.x<<" , "<<
             it->left_bottle.y<<")"<<" "<<it->reverse_mode<<endl;
     cout<<"rec done:"<<endl;
     for (vector<rectangle>::iterator it = g_v_rec_done.begin(); it != g_v_rec_done.end(); it++)
-        cout<<it->width<<" "<<it->height<<"   ("<<it->left_bottle.x<<" , "<<
+        cout<<it->width<<" "<<it->height<<" time:"<<it->time<<"   ("<<it->left_bottle.x<<" , "<<
             it->left_bottle.y<<")"<<" "<<it->reverse_mode<<endl;
     cout<<"as info:"<<endl;
     for (vector<action_space>::iterator it = g_v_as.begin(); it != g_v_as.end(); it++)
@@ -1213,10 +1244,80 @@ void print_data()
 
 void print_kopt()
 {
+    cout<<"kopt size:"<<g_v_action_kopt.size();
     for (vector<conner_action>::iterator it = g_v_action_kopt.begin();
          it != g_v_action_kopt.end() ; ++it)
     {
         cout<<"rec:"<<"("<<it->rec.width <<","<<it->rec.height<<")";
         cout<<"as:"<<"("<<it->as.width<<","<<it->as.height<<")"<<endl;
     }
+}
+
+// 初始化动作空间和线信息
+void init_data()
+{
+// 初始化动作空间
+    g_v_as.clear();
+    g_v_as.push_back(g_as);
+    
+    // 初始化角
+    g_s_conner.insert(conner(g_as.left_bottle.x,g_as.left_bottle.y,1,LEFT_BOTTLE) );
+    g_s_conner.insert(conner(g_as.left_top().x,g_as.left_top().y,1,LEFT_TOP ));
+    g_s_conner.insert(conner(g_as.right_top().x,g_as.right_top().y,1,RIGHT_TOP ));
+    g_s_conner.insert(conner(g_as.right_bottle().x,g_as.right_bottle().y,1,RIGHT_BOTTLE ));
+
+    // 初始化线
+    g_v_hline.push_back(Hline(g_as.left_top(),g_as.right_top(),DOWN_LINE));
+    g_v_hline.push_back(Hline(g_as.left_bottle,g_as.right_bottle(),UP_LINE));
+    g_v_vline.push_back(Vline(g_as.left_bottle,g_as.left_top(),RIGHT_LINE));
+    g_v_vline.push_back(Vline(g_as.right_bottle(),g_as.right_top(), LEFT_LINE));        
+}
+
+bool time_comp(const rectangle & rec1,const rectangle & rec2)
+{
+    if (rec1.time < rec2.time)
+        return 1;
+    else
+        return 0;
+}
+
+bool is_done(const rectangle & rec)
+{
+    if (rec.time==0)
+        return 1;
+    else
+        return 0;
+}
+
+// 更新举行块状态，时间，以及所属集合
+// 并且返回这次调度的举行块的加工时间，即加工时间最短的那个矩形块
+int update_rec_status()
+{
+        
+    vector<rectangle>::iterator it = g_v_rec_done.end();
+    print_data();
+    cout<<"area:"<<get_area()<<endl;
+    
+    it = min_element(g_v_rec_done.begin(),g_v_rec_done.end(),time_comp);
+    int min_time = 0;
+    if (it == g_v_rec_done.end())
+        return 0 ;
+    min_time = it->time;
+    cout<<"min time:"<<min_time<<endl;
+    for(vector<rectangle>::iterator itr = g_v_rec_done.begin();
+        itr != g_v_rec_done.end(); itr++)
+    {
+        itr->time  -= min_time;
+        if (itr->time == 0) // 加工完毕的话，添加到调度完成集合
+            g_v_rec_scheduled.push_back(*itr);
+        if (itr->time != 0) // 加工未完成，重新添加到待处理集合
+            g_v_rec_undo.push_back(*itr);
+    }
+
+    // 将已经加工完成的小矩形块移到后面
+//  it = remove_if(g_v_rec_done.begin(), g_v_rec_done.end(),is_done);
+    // 从集合中删除已经加工完成的
+//    g_v_rec_done.erase(it,g_v_rec_done.end());
+    g_v_rec_done.clear();
+    return min_time;
 }

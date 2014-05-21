@@ -117,7 +117,7 @@ public:
     bool reverse_mode ; // 是否旋转：1 旋转; 0未选转
      int place_type; // 放置类型,-1表示还未放置
                      // 取值 LEFT_BOTTLE,LEFT_TOP,RIGHT_BOTTLE, RIGHT_TOP
-
+    int time;
     rectangle():left_bottle(0,0),width(0),height(0),
                 reverse_mode(0),place_type(-1){    }
 
@@ -130,8 +130,9 @@ public:
 
     rectangle(const rectangle & _rec)
         :left_bottle(_rec.left_bottle),width(_rec.width),height(_rec.height),
-         reverse_mode(_rec.reverse_mode),place_type(_rec.place_type)                                      
-    {    }
+         reverse_mode(_rec.reverse_mode),
+         place_type(_rec.place_type),time(_rec.time)
+        {    }
 
     rectangle & operator=(const rectangle & _rec)
     {
@@ -140,6 +141,7 @@ public:
         height = _rec.height;
         reverse_mode = _rec.reverse_mode ;
         place_type = _rec.place_type;
+        time = _rec.time;
         return *this;
     }
 

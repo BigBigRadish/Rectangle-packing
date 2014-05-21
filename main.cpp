@@ -336,9 +336,9 @@ bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
     fit_degree max_fd ;
     bool finded = 0;
     
-    for (; i2as!= g_v_as.end() ; i2as++) // 迭代动作空间
+    for (i2as= g_v_as.begin(); i2as!= g_v_as.end() ; i2as++) // 迭代动作空间
     {
-        for (; i2rec != g_v_rec_undo.end() ; ++i2rec) // 迭代外部矩形块
+        for (i2rec=g_v_rec_undo.begin(); i2rec != g_v_rec_undo.end() ; ++i2rec) // 迭代外部矩形块
         {
             if(!max_fd_of8values(i2rec,i2as,fd))
                 continue;
@@ -575,11 +575,12 @@ bool max_fd_of8values(const vector<rectangle>:: iterator & i2rec,
          ||max(i2rec->width,i2rec->height)>  max(i2as->width,i2as->height) )
         {
             cout<<"i am as ("<<i2as->width<<","<<i2as->height;
-            cout<<")  i can not place it: ("<<i2rec->width<<","<<i2rec->height<<")";
+            cout<<")  i can not place it: ("<<i2rec->width<<","<<i2rec->height<<")"<<endl;
             
             return 0;
         }
-    
+    cout<<"i am as ("<<i2as->width<<","<<i2as->height;
+    cout<<")  i am rec: ("<<i2rec->width<<","<<i2rec->height<<")"<<endl;
     bool finded = 0;
     finded = max_fd_of4values(i2rec , i2as, fd);
     rectangle rec_un_reverse(*i2rec);
@@ -1098,7 +1099,12 @@ void backtrack()
                 rec_chonse = it->rec;
                 as_chonse = it->as;
             }
+            if (area == g_as.get_area())
+                break;
         }
+        if (area == g_as.get_area())
+            break;
+        
         restore();
         i2chonse_rec = find(g_v_rec_undo.begin(),g_v_rec_undo.end(),rec_chonse);
         i2chonse_as = find(g_v_as.begin(),g_v_as.end(),as_chonse);

@@ -1078,8 +1078,8 @@ void backtrack()
              it != g_v_action_kopt.end() ; ++it)
         {
             restore();
-//            cout<<"rec:"<<"("<<it->rec.width <<","<<it->rec.height<<")";
-//            cout<<"as:"<<"("<<it->as.width<<","<<it->as.height<<") begin:"<<endl;
+            cout<<"opt:rec:"<<"("<<it->rec.width <<","<<it->rec.height<<")";
+            cout<<"as:"<<"("<<it->as.width<<","<<it->as.height<<") begin:"<<endl;
             i2chonse_rec = find(g_v_rec_undo.begin(),g_v_rec_undo.end(),it->rec);
             i2chonse_as = find(g_v_as.begin(),g_v_as.end(),it->as);
             do
@@ -1088,7 +1088,7 @@ void backtrack()
 //                print_data();
             }while(chose_as_rec(i2chonse_rec,i2chonse_as));
             area = get_area();
-//            cout<<"area:"<<area<<endl;
+            cout<<"area:"<<area<<endl;
 //            print_data();
 //            cout<<"end"<<endl;
             if (max_area < area)
@@ -1100,6 +1100,7 @@ void backtrack()
             if (area == g_as.get_area())
                 break;
         }
+        cout<<"aera:"<<max_area<<endl;
         g_backtrack_mark = 1;
         g_v_action_kopt.clear();
 
@@ -1120,11 +1121,18 @@ void update_kopt( const fit_degree & fd,
                   const rectangle & rec,
                   const action_space & as)
 {
+    vector<conner_action>::iterator it = g_v_action_kopt.end();
+
+    // 如果已经存在一样的占角，则不添加
+    it = find(g_v_action_kopt.begin(),g_v_action_kopt.end(),
+              conner_action(fd,rec,as)) ;
+    if (it != g_v_action_kopt.end())
+        return ;
+    
     if (g_v_action_kopt.size() <= g_optnumber)
         g_v_action_kopt.push_back(conner_action(fd,rec,as));
     else
     {
-        vector<conner_action>::iterator it = g_v_action_kopt.end();
         it = min_element(g_v_action_kopt.begin(),g_v_action_kopt.end());
         if (it->fd < fd  || (fd == it->fd && rec > it->rec) )
         {
@@ -1261,12 +1269,15 @@ void init_data()
     g_v_as.push_back(g_as);
     
     // 初始化角
+    g_s_conner.clear();
     g_s_conner.insert(conner(g_as.left_bottle.x,g_as.left_bottle.y,1,LEFT_BOTTLE) );
     g_s_conner.insert(conner(g_as.left_top().x,g_as.left_top().y,1,LEFT_TOP ));
     g_s_conner.insert(conner(g_as.right_top().x,g_as.right_top().y,1,RIGHT_TOP ));
     g_s_conner.insert(conner(g_as.right_bottle().x,g_as.right_bottle().y,1,RIGHT_BOTTLE ));
 
     // 初始化线
+    g_v_hline.clear();
+    g_v_vline.clear();
     g_v_hline.push_back(Hline(g_as.left_top(),g_as.right_top(),DOWN_LINE));
     g_v_hline.push_back(Hline(g_as.left_bottle,g_as.right_bottle(),UP_LINE));
     g_v_vline.push_back(Vline(g_as.left_bottle,g_as.left_top(),RIGHT_LINE));

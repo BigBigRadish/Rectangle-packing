@@ -1,0 +1,50 @@
+the big as:10 10
+read:8 8 1
+read:1 9 1
+read:1 9 1
+read:1 9 1
+read:1 9 1
+rec size:5
+begin task:
+rec undo:
+8 8 time:1   (0 , 0) 0
+1 9 time:1   (0 , 0) 0
+1 9 time:1   (0 , 0) 0
+1 9 time:1   (0 , 0) 0
+1 9 time:1   (0 , 0) 0
+rec done:
+as info:
+x: 0 y:0 width:10 height:10
+conner:
+x:0 y:0 conner type: lb 
+x:0 y:10 conner type: lt
+x:10 y:0 conner type: rb
+x:10 y:10 conner type: rt
+kopt size:10rec:(8,8)as:(10,10)
+rec:(1,9)as:(10,10)
+rec:(1,9)as:(10,10)
+rec:(1,9)as:(10,10)
+rec:(1,9)as:(10,10)
+rec:(8,8)as:(10,10)
+rec:(1,9)as:(10,10)
+rec:(1,9)as:(10,10)
+rec:(1,9)as:(10,10)
+rec:(1,9)as:(10,10)
+rec undo:
+rec done:
+1 9 time:1   (0 , 0) 0
+9 1 time:1   (0 , 9) 1
+9 1 time:1   (1 , 0) 1
+1 9 time:1   (9 , 1) 0
+8 8 time:1   (1 , 1) 0
+as info:
+conner:
+area:100
+min time:1
+1 9   (0 , 0) 0
+9 1   (0 , 9) 1
+9 1   (1 , 0) 1
+1 9   (9 , 1) 0
+8 8   (1 , 1) 0
+end task:
+1

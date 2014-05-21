@@ -48,3 +48,44 @@ min time:1
 8 8   (1 , 1) 0
 end task:
 1
+
+
+
+
+
+
+
+	初始化T个矩形块集合{ R_i | 0 < i  <= T}，每个矩形块集合R_i中存放一个W* H的矩形块；
+	初始化矩形块集合Z为空
+	标记当前矩形块个数NUM为T。
+	while NUM< N  && 还有矩形块可分割 do
+		对每个集合R_i中的每个矩形块调用算法5：矩形块分割算法
+	   更新  NUM
+	end while
+	for  i=1 , i <=  T   do
+	    for  r_j   in R_i
+	         for  k >0 && k<=T && k != i
+	              if     R_k 中存在和 r_j 宽高一样的矩形块
+	                  r_j 的加工时间增加一个单位
+	                  从R_k中删除一个和r_j 宽高一样的矩形块
+	         将r_j 加入矩形块集合Z中
+	         从R_i中删去r_j
+输出Z，Z即为所有求出的矩形块集合
+
+
+
+2	if  random() %2 ==0 
+3	    //分割宽
+4	    k = random() % W
+5	    if  k >=1 && W-k >=1
+6	        w1 = k
+7	        w2 = W – k
+8	        h2 = h1 = H 
+9	if  random() %2 ==1 
+10	    //分割高
+11	    k = random() % H
+12	    if  k >=1 && H -k >=1
+13	        h1 = k
+14	        h2 = W – k
+15	        w1 = w2 = W 
+16	输出r1,r2

@@ -985,7 +985,11 @@ void update_action_space()
 // 输出最后数据
 void output_data(int number, int time)
 {
-    ofile<<"P"<<number<<"  time:"<<time<<endl;
+    int area = 0;
+    ofile<<"P"<<number<<"  time:"<<time;
+    for (vector<rectangle>::iterator it = g_v_rec_done.begin(); it != g_v_rec_done.end(); it++)
+        area+= it->get_area();
+    ofile<<"  area:"<<area<<endl;
     for (vector<rectangle>::iterator it = g_v_rec_done.begin(); it != g_v_rec_done.end(); it++)
         ofile<<it->width<<"   "<<it->height<<"     ("<<it->left_bottle.x<<" , "<<
             it->left_bottle.y<<")"<<"    "<<it->reverse_mode<<endl;
@@ -1212,7 +1216,10 @@ int update_rec_status()
 
 void print_schedule(int time,int number)
 {
-    cout<<"P"<<number<<"  time:"<<time<<endl;
+    int area = 0;
+    for (vector<rectangle>::iterator it = g_v_rec_done.begin(); it != g_v_rec_done.end(); it++)
+        area+= it->get_area();
+    cout<<"P"<<number<<"  time:"<<time<<"  area:"<<area<<endl;
     for (vector<rectangle>::iterator it = g_v_rec_done.begin(); it != g_v_rec_done.end(); it++)
         cout<<it->width<<"   "<<it->height<<"     ("<<it->left_bottle.x<<" , "<<
             it->left_bottle.y<<")"<<"    "<<it->reverse_mode<<endl;

@@ -119,7 +119,7 @@ public:
                      // 取值 LEFT_BOTTLE,LEFT_TOP,RIGHT_BOTTLE, RIGHT_TOP
     int time;
     rectangle():left_bottle(0,0),width(0),height(0),
-                reverse_mode(0),place_type(-1){    }
+                reverse_mode(0),place_type(-1),time(0){    }
 
     rectangle(const conner & _left_bottle, int _width, int _height )
         :left_bottle(_left_bottle),width(_width),

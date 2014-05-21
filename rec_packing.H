@@ -418,7 +418,7 @@ public:
         }
     bool operator ==(const conner_action &_ac)
         {
-            if (fd == _ac.fd && rec == _ac.rec)
+            if (fd == _ac.fd && rec == _ac.rec && as == _ac.as)
                 return 1;
             else
                 return 0;

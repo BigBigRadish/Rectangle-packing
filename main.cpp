@@ -76,7 +76,7 @@ set<conner> g_s_conner2space; // 每次新生成的角,新动作空间从这些�
 
 
 action_space g_as(conner(0,0,0),0,0);
-
+ofstream ofile("output.txt");
 
 
 const int MAX = 999999;
@@ -203,7 +203,9 @@ void init();
 
 
 // 输出最后数据
-void output_data();
+void output_data(int number, int time);
+
+
 
 
 
@@ -978,17 +980,15 @@ void update_action_space()
     // 清除和小矩形重叠的动作空间
     g_v_as.erase( remove_if(g_v_as.begin(),g_v_as.end(),is_conflicted),
                   g_v_as.end() );
-    // for (vector<action_space>::iterator it = g_v_as_conflict.begin(); it != g_v_as_conflict.end(); it++)
-    //     g_v_as.erase()
-    //     g_v_as.erase(it);
 }
 
 // 输出最后数据
-void output_data()
+void output_data(int number, int time)
 {
-    ofstream ofile("output.txt");
+    ofile<<"P"<<number<<"  time:"<<time<<endl;
     for (vector<rectangle>::iterator it = g_v_rec_done.begin(); it != g_v_rec_done.end(); it++)
-        ofile<<it->width<<" "<<it->height<<"   ("<<it->left_bottle.x<<" , "<<it->left_bottle.y<<")"<<endl;
+        ofile<<it->width<<"   "<<it->height<<"     ("<<it->left_bottle.x<<" , "<<
+            it->left_bottle.y<<")"<<"    "<<it->reverse_mode<<endl;
 }
 
 
@@ -1138,6 +1138,7 @@ void task_scheduling()
         number++;
         time_total += time_this;
         print_schedule(time_total,number);
+        output_data(number,time_total);
         init_data();
      }
 }

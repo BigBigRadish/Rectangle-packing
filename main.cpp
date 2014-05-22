@@ -225,6 +225,10 @@ void data_pop();
 
 int backtrack2();
 
+bool conner_check(const conner & cn,int conner_type);
+
+
+
 
 
 int main(int arg ,char *arv[])
@@ -851,16 +855,23 @@ void find_conner_vline2downline(const Vline & vline, const Hline & down_line)
         if (vline.line_type == RIGHT_LINE && vline.get_x()!= down_line.pt_right.x
             && g_s_conner_blocked.count(conner(vline.get_x(),down_line.get_y(),1,LEFT_TOP) )==0 )
         {
-            g_s_conner.insert(conner(vline.get_x(),down_line.get_y(),1,LEFT_TOP) );
-            g_s_conner2space.insert(conner(vline.get_x(),down_line.get_y(),1,LEFT_TOP));
+            if (conner_check(conner(vline.get_x(),down_line.get_y(),1,LEFT_TOP) ,LEFT_TOP))
+            {
+                g_s_conner.insert(conner(vline.get_x(),down_line.get_y(),1,LEFT_TOP) );
+                g_s_conner2space.insert(conner(vline.get_x(),down_line.get_y(),1,LEFT_TOP));
+            }
         }
         
         // 左沿线，右上角
         if(vline.line_type == LEFT_LINE && vline.get_x()!= down_line.pt_left.x
             && g_s_conner_blocked.count(conner(vline.get_x(),down_line.get_y(),1,RIGHT_TOP) ) ==0) 
         {
-            g_s_conner.insert(conner(vline.get_x(),down_line.get_y(),1,RIGHT_TOP) );
-            g_s_conner2space.insert(conner(vline.get_x(),down_line.get_y(),1,RIGHT_TOP));
+            if (conner_check(conner(vline.get_x(),down_line.get_y(),1,RIGHT_TOP) , RIGHT_TOP) )
+            {
+                g_s_conner.insert(conner(vline.get_x(),down_line.get_y(),1,RIGHT_TOP) );
+                g_s_conner2space.insert(conner(vline.get_x(),down_line.get_y(),1,RIGHT_TOP));
+            }
+
         }
         
     }
@@ -875,16 +886,23 @@ void find_conner_vline2upline(const Vline & vline, const Hline & up_line)
         if (vline.line_type == LEFT_LINE && vline.get_x() != up_line.pt_left.x
             && g_s_conner_blocked.count(conner(vline.get_x(),up_line.get_y(),1,RIGHT_BOTTLE))==0 )
         {
-            g_s_conner.insert(conner(vline.get_x(),up_line.get_y(),1,RIGHT_BOTTLE) );
-            g_s_conner.insert(conner(vline.get_x(),up_line.get_y(),1,RIGHT_BOTTLE) );
+            if (conner_check(conner(vline.get_x(),up_line.get_y(),1,RIGHT_BOTTLE) ,RIGHT_BOTTLE))
+            {
+                g_s_conner.insert(conner(vline.get_x(),up_line.get_y(),1,RIGHT_BOTTLE) );
+                g_s_conner2space.insert(conner(vline.get_x(),up_line.get_y(),1,RIGHT_BOTTLE) );
+            }
+
         }
         
         // 垂直线是右沿线且不和矩形上沿线的右端点重合，左下角
         if (vline.line_type == RIGHT_LINE && vline.get_x() != up_line.pt_right.x
             && g_s_conner_blocked.count(conner(vline.get_x(),up_line.get_y(),1,LEFT_BOTTLE))==0)
         {
-            g_s_conner.insert(conner(vline.get_x(),up_line.get_y(),1,LEFT_BOTTLE) );
-            g_s_conner2space.insert(conner(vline.get_x(),up_line.get_y(),1,LEFT_BOTTLE) );
+            if (conner_check(conner(vline.get_x(),up_line.get_y(),1,LEFT_BOTTLE),LEFT_BOTTLE))
+            {
+                g_s_conner.insert(conner(vline.get_x(),up_line.get_y(),1,LEFT_BOTTLE) );
+                g_s_conner2space.insert(conner(vline.get_x(),up_line.get_y(),1,LEFT_BOTTLE) );
+            }
         }
         
     }
@@ -899,16 +917,21 @@ void find_conner_hline2leftline(const Hline & hline, const Vline & left_line)
         if (hline.line_type == UP_LINE && hline.get_y() != left_line.pt_top.y
             && g_s_conner_blocked.count(conner(left_line.get_x(),hline.get_y(),1,RIGHT_BOTTLE))==0)
         {
-            g_s_conner.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_BOTTLE));
-            g_s_conner2space.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_BOTTLE));
-
+            if (conner_check(conner(left_line.get_x(),hline.get_y(),1,RIGHT_BOTTLE),RIGHT_BOTTLE))
+            {
+                g_s_conner.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_BOTTLE));
+                g_s_conner2space.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_BOTTLE));
+            }
         }
         // 如果水平线是下沿线，则和矩形块的左沿线组成角为右上角
         if (hline.line_type == DOWN_LINE && hline.get_y() != left_line.pt_bottle.y
             && g_s_conner_blocked.count(conner(left_line.get_x(),hline.get_y(),1,RIGHT_TOP))==0 )
         {
-            g_s_conner.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_TOP));
-            g_s_conner2space.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_TOP));
+            if (conner_check(conner(left_line.get_x(),hline.get_y(),1,RIGHT_TOP),RIGHT_TOP))
+            {
+                g_s_conner.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_TOP));
+                g_s_conner2space.insert(conner(left_line.get_x(),hline.get_y(),1,RIGHT_TOP));
+            }
         }
         
     }
@@ -923,17 +946,23 @@ void find_conner_hline2rightline(const Hline & hline, const Vline & right_line)
         if (hline.line_type == UP_LINE && hline.get_y() != right_line.pt_top.y
             && g_s_conner_blocked.count(conner(right_line.get_x(), hline.get_y(),1,LEFT_BOTTLE )) ==0)
         {
-            g_s_conner.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_BOTTLE ));
-            g_s_conner2space.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_BOTTLE ));
+            if (conner_check(conner(right_line.get_x(), hline.get_y(),1,LEFT_BOTTLE ),LEFT_BOTTLE))
+            {
+                g_s_conner.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_BOTTLE ));
+                g_s_conner2space.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_BOTTLE ));                
+            }
+
         }
         // 水平线是下沿线，且不和当前矩形右沿线的下端点重合，左上角
         if (hline.line_type == DOWN_LINE && hline.get_y() != right_line.pt_bottle.y
             && g_s_conner_blocked.count(conner(right_line.get_x(), hline.get_y(),1,LEFT_TOP )) == 0)
         {
-            g_s_conner.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_TOP ));
-            g_s_conner2space.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_TOP ));
+            if (conner_check(conner(right_line.get_x(), hline.get_y(),1,LEFT_TOP ), LEFT_TOP))
+            {
+                g_s_conner.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_TOP ));
+                g_s_conner2space.insert(conner(right_line.get_x(), hline.get_y(),1,LEFT_TOP ));
+            }
         }
-        
     }
 }
 
@@ -1000,11 +1029,16 @@ void find_conflict_as(const rectangle & rec)
 void update_action_space()
 {
     // 由角生成动作空间
-  
-    
+            
+    cout<<"blocked size:"<<g_s_conner_blocked.size()<<endl;
     for (set<conner>::iterator it = g_s_conner2space.begin();
-         it != g_s_conner2space.end()  ; ++it)
+         it != g_s_conner2space.end()   ; ++it)
     {
+        if (g_s_conner_blocked.find(*it) != g_s_conner_blocked.end() )
+        {
+            cout<<"conner blocked:()"<<it->x<<","<<it->y<<")"<<endl;
+            continue;
+        }
         switch( it->conner_type  )
         {
         case LEFT_BOTTLE: conner2as_lb(*it);break;
@@ -1365,7 +1399,7 @@ int backtrack2()
     g_v_action_kopt.clear();
     while(chose_as_rec(i2chonse_rec,i2chonse_as))
     {
-        data_push();
+//        data_push();
         
         print_kopt();
         g_backtrack_mark = 0 ;
@@ -1377,7 +1411,7 @@ int backtrack2()
             print_data();
             i2chonse_rec =
                 find(g_v_rec_undo.begin(),g_v_rec_undo.end(),it->rec);
-            
+            print_kopt();
             if(i2chonse_rec == g_v_rec_undo.end())
                 cout<<"not find"<<endl;
             *i2chonse_rec = it->rec;
@@ -1394,12 +1428,14 @@ int backtrack2()
             
             cout<<"  as:"<<i2chonse_as->width<<"  "<<i2chonse_as->height<<"  ( ";
             cout<<i2chonse_as->left_bottle.x<<" ,"<< i2chonse_as->left_bottle.y<<endl;
-            
+
+            data_push();
             update_data(i2chonse_rec,i2chonse_as);
             cout<<"end action:"<<endl;
             print_data();
 
             area = backtrack2();
+            
             if(max_area < area)
             {
                 max_area = area;
@@ -1407,11 +1443,13 @@ int backtrack2()
             }
             if (max_area == g_as.get_area())
                 break;
+            data_pop();
+
         }
         g_v_action_kopt.clear();
         if (max_area == g_as.get_area())
                 break;
-        data_pop();
+//        data_pop();
         i2chonse_rec =
                 find(g_v_rec_undo.begin(),g_v_rec_undo.end(),ac.rec);
         i2chonse_as = find(g_v_as.begin(),g_v_as.end(),ac.as);
@@ -1488,3 +1526,33 @@ void data_pop()
 }
 
 
+
+
+bool conner_check(const conner & cn,int conner_type)
+{
+    for (vector<rectangle>::iterator it = g_v_rec_done.begin();
+         it!= g_v_rec_done.end() ; ++it)
+    {
+        switch(conner_type)
+        {
+        case LEFT_TOP:
+            if(it->left_top() == cn)
+                return 0;
+            break;
+        case LEFT_BOTTLE:
+            if(it->left_bottle == cn)
+                return 0;
+            break;
+        case RIGHT_TOP:
+            if (it->right_top() == cn)
+                return 0;
+            break;
+        case RIGHT_BOTTLE:
+            if (it->right_bottle() == cn)
+                return 0;
+            break;
+        default:cout<<"error conner check"<<endl;
+        }
+    }
+    return 1;
+}

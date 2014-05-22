@@ -16,4 +16,191 @@ rec:2  8  (8 0 )as:2  8  (8 0 )
 rec:1  9  (9 0 )as:1  10  (9 0 )
 push:
 rec:2  8  (8 0 )as:2  8  (8 0 )
+rec:1  9  (9 1 )as:1  10  (9 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+rec:1  9  (9 1 )as:1  10  (9 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+rec:1  9  (9 1 )as:1  10  (9 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+rec:1  9  (9 1 )as:1  10  (9 0 )
+pop:
+rec:9  1  (0 9 )as:10  1  (0 9 )
+rec:2  8  (8 0 )as:2  8  (8 0 )
 rec:1  9  (9 0 )as:1  10  (9 0 )
+push:
+rec:9  1  (0 9 )as:10  1  (0 9 )
+rec:2  8  (8 0 )as:2  8  (8 0 )
+rec:1  9  (9 0 )as:1  10  (9 0 )
+push:
+rec:9  1  (0 9 )as:10  1  (0 9 )
+pop:
+rec:9  1  (0 9 )as:10  1  (0 9 )
+pop:
+rec:9  1  (0 9 )as:10  1  (0 9 )
+rec:2  8  (8 0 )as:2  8  (8 0 )
+rec:1  9  (9 0 )as:1  10  (9 0 )
+push:
+rec:9  1  (0 9 )as:10  1  (0 9 )
+rec:2  8  (8 0 )as:2  8  (8 0 )
+rec:1  9  (9 0 )as:1  10  (9 0 )
+push:
+rec:9  1  (0 9 )as:10  1  (0 9 )
+pop:
+rec:9  1  (0 9 )as:10  1  (0 9 )
+pop:
+rec:9  1  (0 9 )as:10  1  (0 9 )
+rec:2  8  (8 0 )as:2  8  (8 0 )
+rec:1  9  (9 0 )as:1  10  (9 0 )
+push:
+rec:9  1  (0 9 )as:10  1  (0 9 )
+pop:
+rec:9  1  (0 9 )as:10  1  (0 9 )
+push:
+rec:9  1  (0 9 )as:10  1  (0 9 )
+pop:
+rec:9  1  (0 9 )as:10  1  (0 9 )
+pop:
+rec:9  1  (0 8 )as:10  2  (0 8 )
+rec:10  2  (0 8 )as:10  2  (0 8 )
+rec:8  2  (0 8 )as:10  2  (0 8 )
+rec:1  9  (8 0 )as:2  10  (8 0 )
+rec:2  10  (8 0 )as:2  10  (8 0 )
+rec:2  8  (8 0 )as:2  10  (8 0 )
+push:
+rec:9  1  (0 8 )as:10  2  (0 8 )
+rec:10  2  (0 8 )as:10  2  (0 8 )
+rec:8  2  (0 8 )as:10  2  (0 8 )
+rec:1  9  (8 0 )as:2  10  (8 0 )
+rec:2  10  (8 0 )as:2  10  (8 0 )
+rec:2  8  (8 0 )as:2  10  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+push:
+rec:2  8  (8 0 )as:2  8  (8 0 )
+pop:
+rec:2  8  (8 0 )as:2  8  (8 0 )

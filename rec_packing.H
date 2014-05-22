@@ -236,7 +236,9 @@ public:
         }
     bool operator==(const rectangle & _rec)
     {
-        if (width == _rec.width && height == _rec.height)
+        if (min(width,height) == min(_rec.width,_rec.height)
+            && max(width,height) == max(_rec.width,_rec.height)
+            )
             return 1;
         else
             return 0;
@@ -257,7 +259,7 @@ public:
     action_space(const conner & _left_bottle, int _width=0, int _height=0):
         rectangle(_left_bottle,_width,_height),is_conflict(0){    }
     action_space(const action_space & as):
-        rectangle(as.left_bottle,as.width,as.height){    }
+        rectangle(as.left_bottle,as.width,as.height),is_conflict(as.is_conflict){    }
     // action_space & operator=(const action_space & as)
     // {
         

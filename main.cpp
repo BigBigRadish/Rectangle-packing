@@ -10,12 +10,20 @@
 #include <fstream>
 #include "rec_packing.H"
 #include <string>
+#include <stack>
 
 using namespace std;
 
 void print_kopt();
 
 
+stack< vector<Hline>  > g_stk_v4hl;
+stack< vector<Vline> > g_stk_v4vl;
+stack< vector<rectangle> > g_stk_v4rec_undo;
+stack< vector<rectangle> > g_stk_v4rec_done;
+stack< vector<action_space> > g_stk_v4as;
+stack< set<conner> > g_stk_s4conner;
+stack< vector<conner_action> > g_stk_v4kopt;
 
 
 // 
@@ -34,7 +42,7 @@ int g_backtrack_mark = 1 ; // 用来标记是回溯过程还是正常的迭代�
 
 // 前k个最优的占角动作
 vector<conner_action> g_v_action_kopt;
-int  g_optnumber = 10;
+int  g_optnumber = 5;
 
 
 
@@ -77,6 +85,8 @@ set<conner> g_s_conner2space; // 每次新生成的角,新动作空间从这些�
 
 action_space g_as(conner(0,0,0),0,0);
 ofstream ofile("output.txt");
+ofstream popfile("pushpop.xt");
+
 
 
 const int MAX = 999999;
@@ -209,6 +219,12 @@ void output_data(int number, int time);
 
 void print_kopt();
 
+void data_push();
+
+void data_pop();
+
+int backtrack2();
+
 
 
 int main(int arg ,char *arv[])
@@ -241,8 +257,10 @@ void init()
     }
     // 预分配空间
     // 否则会导致 chose_as_rec 迭代时候，迭代器失效，因为
-    g_v_as.reserve(1000);
-    g_v_as_backup.reserve(1000);
+    g_v_as.reserve(200);
+    g_v_as_backup.reserve(200);
+    g_v_action_kopt.reserve(15);
+    
 
     init_data();
 }
@@ -514,6 +532,11 @@ bool  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
         i2rec->set_ordinate_rt(i2as->right_top() );break;
     default:
         cout<<"error";
+        cout<<"rec:"<<i2rec->width<<" "<<i2rec->height;
+        cout<<"  (:"<<i2rec->left_bottle.x<<" "<<i2rec->left_bottle.y<<" )";
+        cout<<"  as:"<<i2as->width<<" "<<i2as->height;
+        cout<<"  (:"<<i2as->left_bottle.x<<" "<<i2as->left_bottle.y<<" )"<<endl;
+
     }
     return 1;
 }
@@ -585,6 +608,9 @@ void conner2as_lb(const conner & lb_conner)
     action_space as(lb_conner,as_right_x - lb_conner.x, as_top_y - lb_conner.y);
     if (find(g_v_as.begin(), g_v_as.end(), as) == g_v_as.end())
         g_v_as.push_back(as);
+    cout<<"lb to as:"<<endl;
+    cout<<"lb:("<<lb_conner.x<<" ,"<<lb_conner.y;
+    cout<<"   as"<<" as:("<<as.width<<" "<<as.height<<"), as number: "<<g_v_as.size()<< endl;
     
     //b1  左下角往上，寻找右上角的x坐标
     as_right_x = MAX ;
@@ -612,8 +638,14 @@ void conner2as_lb(const conner & lb_conner)
     }
 
     action_space as2(lb_conner,as_right_x - lb_conner.x, as_top_y - lb_conner.y);
+    
     if (find(g_v_as.begin(), g_v_as.end(), as2) == g_v_as.end())
         g_v_as.push_back(as2);
+    cout<<"lb to as:"<<endl;
+    cout<<"lb:("<<lb_conner.x<<" ,"<<lb_conner.y;
+    cout<<"   as"<<" as:("<<as2.width<<" "<<as2.height<<", conflict:"<<as2.is_conflict<<"), as number: "<<g_v_as.size()<< endl;
+
+    
 }
 
 // 左上角算法
@@ -968,6 +1000,8 @@ void find_conflict_as(const rectangle & rec)
 void update_action_space()
 {
     // 由角生成动作空间
+  
+    
     for (set<conner>::iterator it = g_s_conner2space.begin();
          it != g_s_conner2space.end()  ; ++it)
     {
@@ -980,8 +1014,21 @@ void update_action_space()
         }
     }
     // 清除和小矩形重叠的动作空间
+    cout<<"erase as before:"<<g_v_as.size()<<endl;
+    int number = 0;
+    for (vector<action_space>::iterator it = g_v_as.begin(); it!= g_v_as.end(); ++it)
+    {
+        if (it->is_conflict == 1)
+        {
+            number++;
+        }
+    }
+    cout<<"conflicted:number:"<<number<<endl;
     g_v_as.erase( remove_if(g_v_as.begin(),g_v_as.end(),is_conflicted),
                   g_v_as.end() );
+    cout<<"erase as after:"<<g_v_as.size()<<endl;
+
+
 }
 
 // 输出最后数据
@@ -1001,9 +1048,11 @@ void output_data(int number, int time)
 
 bool is_conflicted(const action_space& as)
 {
-    if (as.is_conflict)
-        return 1;
-    return 0;
+    // if (as.is_conflict)
+    //     return 1;
+    if(as.is_conflict == 0)
+        return 0;
+    return 1;
 }
 
 
@@ -1142,10 +1191,10 @@ void task_scheduling()
     int time_total = 0; // 记录总体加工时间
     int time_this = 0; // 记录本次调度加工时间
     int number = 0;
-    while(chose_as_rec(i2chonse_rec,i2chonse_as))
+    while(g_v_rec_undo.size()!=0)
     {
         // 用回溯法完成一次调度
-        backtrack();
+        backtrack2();
         time_this = update_rec_status();
         number++;
         time_total += time_this;
@@ -1153,6 +1202,7 @@ void task_scheduling()
         output_data(number,time_total);
         init_data();
         print_data();
+        
      }
 }
 
@@ -1176,6 +1226,7 @@ void init_data()
     g_s_conner_backup.clear();
     g_s_conner_blocked.clear();
     g_s_conner2space.clear();
+
     
     g_v_as.push_back(g_as);
     
@@ -1255,7 +1306,7 @@ void print_schedule(int time,int number)
 
 void print_data()
 {
-    cout<<"--------------------------------------------------"<<endl;
+    cout<<"-----------------begin-------------------------------"<<endl;
     cout<<"done info:"<<endl;
     for (vector<rectangle>::iterator it = g_v_rec_done.begin(); it != g_v_rec_done.end(); it++)
         cout<<it->width<<"   "<<it->height<<"     ("<<it->left_bottle.x<<" , "<<
@@ -1265,13 +1316,18 @@ void print_data()
     for (vector<rectangle>::iterator it = g_v_rec_undo.begin(); it != g_v_rec_undo.end(); it++)
         cout<<it->width<<"   "<<it->height<<"     ("<<it->left_bottle.x<<" , "<<
             it->left_bottle.y<<")"<<"    "<<it->reverse_mode<<endl;
-    cout<<" as info:"<<endl;
+    cout<<" as info size:"<<g_v_as.size()<<endl;
     for (vector<action_space>::iterator it = g_v_as.begin(); it != g_v_as.end(); it++)
         cout<<it->width<<"   "<<it->height<<"     ("<<it->left_bottle.x<<" , "<<
             it->left_bottle.y<<")"<<"    "<<it->reverse_mode<<endl;
-    cout<<"conner info:"<<endl;
+    cout<<"conner info :"<<endl;
     for (set<conner>::iterator it = g_s_conner.begin(); it != g_s_conner.end(); it++)
         cout<<"("<<it->x<<", "<<it->y<<")"<<endl;
+
+    cout<<"conner2space info :"<<endl;
+    for (set<conner>::iterator it = g_s_conner2space.begin(); it != g_s_conner2space.end(); it++)
+        cout<<"("<<it->x<<", "<<it->y<<")"<<endl;
+    cout<<"-----------------end---------------------------------"<<endl;
     
 }
 
@@ -1292,3 +1348,143 @@ void print_kopt()
     
  
 }
+
+
+int backtrack2()
+{
+    vector<rectangle>::iterator i2chonse_rec = g_v_rec_undo.begin();
+    vector<action_space>::iterator i2chonse_as = g_v_as.begin();
+    int area = 0;
+    int max_area = 0;
+    fit_degree fd;
+    rectangle rec;
+    action_space as;
+    conner_action ac(fd,rec,as);
+    g_backtrack_mark = 1 ;
+//    data_push();
+    g_v_action_kopt.clear();
+    while(chose_as_rec(i2chonse_rec,i2chonse_as))
+    {
+        data_push();
+        
+        print_kopt();
+        g_backtrack_mark = 0 ;
+        for (vector<conner_action>::iterator
+                 it = g_v_action_kopt.begin();
+             it != g_v_action_kopt.end() ; ++it)
+        {
+            cout<<"before action:"<<endl;
+            print_data();
+            i2chonse_rec =
+                find(g_v_rec_undo.begin(),g_v_rec_undo.end(),it->rec);
+            
+            if(i2chonse_rec == g_v_rec_undo.end())
+                cout<<"not find"<<endl;
+            *i2chonse_rec = it->rec;
+            
+            i2chonse_as = find(g_v_as.begin(),g_v_as.end(),it->as);
+            cout<<"re:"<<it->rec.width<<"  "<<it->rec.height<<" (";
+            cout<<it->rec.left_bottle.x<<" ,"<<it->rec.left_bottle.y;
+            
+            cout<<"  as:"<<it->as.width<<"  "<<it->as.height<<"  ( ";
+            cout<<it->as.left_bottle.x<<" ,"<< it->as.left_bottle.y<<endl;
+
+            cout<<"re:"<<i2chonse_rec->width<<"  "<<i2chonse_rec->height<<" (";
+            cout<<i2chonse_rec->left_bottle.x<<" ,"<<i2chonse_rec->left_bottle.y;
+            
+            cout<<"  as:"<<i2chonse_as->width<<"  "<<i2chonse_as->height<<"  ( ";
+            cout<<i2chonse_as->left_bottle.x<<" ,"<< i2chonse_as->left_bottle.y<<endl;
+            
+            update_data(i2chonse_rec,i2chonse_as);
+            cout<<"end action:"<<endl;
+            print_data();
+
+            area = backtrack2();
+            if(max_area < area)
+            {
+                max_area = area;
+                ac = *it;
+            }
+            if (max_area == g_as.get_area())
+                break;
+        }
+        g_v_action_kopt.clear();
+        if (max_area == g_as.get_area())
+                break;
+        data_pop();
+        i2chonse_rec =
+                find(g_v_rec_undo.begin(),g_v_rec_undo.end(),ac.rec);
+        i2chonse_as = find(g_v_as.begin(),g_v_as.end(),ac.as);
+        update_data(i2chonse_rec,i2chonse_as);
+    }
+    area = get_area();
+//    data_pop();
+    return area;
+}
+
+void output_pushpop()
+{
+    
+    vector<conner_action>::iterator it = g_v_action_kopt.end();
+
+    for (it =g_v_action_kopt.begin();
+         it != g_v_action_kopt.end();it++)
+    {
+        popfile<<"rec:"<<it->rec.width<<"  "<< it->rec.height<<"  ("<<it->rec.left_bottle.x;
+        popfile<<" "<<it->rec.left_bottle.y<<" )";
+        popfile<<"as:"<<it->as.width<<"  "<< it->as.height<<"  ("<<it->as.left_bottle.x;
+        popfile<<" "<<it->as.left_bottle.y<<" )"<<endl;
+    }
+    
+    
+}
+
+
+void data_push()
+{
+
+    popfile<<"push:"<<endl;
+    output_pushpop();
+    
+    print_data();
+    g_stk_v4hl.push( g_v_hline );
+    g_stk_v4vl.push( g_v_vline);
+    g_stk_v4rec_undo.push( g_v_rec_undo);
+    g_stk_v4rec_done.push( g_v_rec_done);
+    g_stk_v4as.push(g_v_as);
+    g_stk_s4conner.push( g_s_conner);
+    g_stk_v4kopt.push( g_v_action_kopt);
+    //   g_v_action_kopt.clear();
+}
+
+void data_pop()
+{
+    g_v_hline = g_stk_v4hl.top();
+    g_stk_v4hl.pop();
+
+    g_v_vline = g_stk_v4vl.top();
+    g_stk_v4vl.pop();
+
+    g_v_rec_undo = g_stk_v4rec_undo.top();
+    g_stk_v4rec_undo.pop();
+
+    g_v_rec_done = g_stk_v4rec_done.top();
+    g_stk_v4rec_done.pop();
+
+    g_v_as = g_stk_v4as.top();
+    g_stk_v4as.pop();
+
+    g_s_conner = g_stk_s4conner.top();
+    g_stk_s4conner.pop();
+
+    g_v_action_kopt = g_stk_v4kopt.top();
+    g_stk_v4kopt.pop();
+
+    popfile<<"pop:"<<endl;
+    if(g_v_action_kopt.size()==0)
+        popfile<<"pop:size 0"<<endl;
+
+    output_pushpop();    
+}
+
+

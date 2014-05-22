@@ -1379,62 +1379,40 @@ int backtrack2()
     action_space as;
     conner_action ac(fd,rec,as);
     g_backtrack_mark = 1 ;
-//    data_push();
     g_v_action_kopt.clear();
+    
     while(chose_as_rec(i2chonse_rec,i2chonse_as))
     {
-//        data_push();
-        
-        print_kopt();
+        max_area = 0;
         g_backtrack_mark = 0 ;
         for (vector<conner_action>::iterator
                  it = g_v_action_kopt.begin();
              it != g_v_action_kopt.end() ; ++it)
         {
             cout<<"before action:"<<endl;
-//            print_data();
             i2chonse_rec =
                 find(g_v_rec_undo.begin(),g_v_rec_undo.end(),it->rec);
-            print_kopt();
             if(i2chonse_rec == g_v_rec_undo.end())
                 cout<<"not find"<<endl;
             *i2chonse_rec = it->rec;
             
             i2chonse_as = find(g_v_as.begin(),g_v_as.end(),it->as);
-            cout<<"re:"<<it->rec.width<<"  "<<it->rec.height<<" (";
-            cout<<it->rec.left_bottle.x<<" ,"<<it->rec.left_bottle.y;
-            
-            cout<<"  as:"<<it->as.width<<"  "<<it->as.height<<"  ( ";
-            cout<<it->as.left_bottle.x<<" ,"<< it->as.left_bottle.y<<endl;
-
-            cout<<"re:"<<i2chonse_rec->width<<"  "<<i2chonse_rec->height<<" (";
-            cout<<i2chonse_rec->left_bottle.x<<" ,"<<i2chonse_rec->left_bottle.y;
-            
-            cout<<"  as:"<<i2chonse_as->width<<"  "<<i2chonse_as->height<<"  ( ";
-            cout<<i2chonse_as->left_bottle.x<<" ,"<< i2chonse_as->left_bottle.y<<endl;
 
             data_push();
             update_data(i2chonse_rec,i2chonse_as);
-            cout<<"end action:"<<endl;
-//            print_data();
-
             area = backtrack2();
-            if(area == g_as.get_area())
-            {
-                cout<<": area:100%"<<" "<<area<<endl;
-//                print_data();
-                
-                return max_area;
-            }
-//            cout<<"area:"<<area<<endl;
             if(max_area < area)
             {
                 max_area = area;
                 ac = *it;
             }
+            if(area == g_as.get_area())
+            {
+                return max_area;
+            }
+
             if (max_area == g_as.get_area())
             {
-                cout<<"haha: area:100%"<<endl;
                 return max_area;
                 break;
             }

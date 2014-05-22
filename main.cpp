@@ -1449,11 +1449,11 @@ int backtrack2()
                 ac = *it;
             }
             if (max_area == g_as.get_area())
-                {
-                    cout<<"haha: area:100%"<<endl;
-                    return max_area;
-                    break;
-                }
+            {
+                cout<<"haha: area:100%"<<endl;
+                return max_area;
+                break;
+            }
                     
             data_pop();
 

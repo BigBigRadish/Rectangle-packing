@@ -264,6 +264,9 @@ void init()
     g_v_as.reserve(200);
     g_v_as_backup.reserve(200);
     g_v_action_kopt.reserve(50);
+    g_v_rec_undo.reserve(100);
+    g_v_rec_done.reserve(100);
+    
     
 
     init_data();
@@ -612,9 +615,6 @@ void conner2as_lb(const conner & lb_conner)
     action_space as(lb_conner,as_right_x - lb_conner.x, as_top_y - lb_conner.y);
     if (find(g_v_as.begin(), g_v_as.end(), as) == g_v_as.end())
         g_v_as.push_back(as);
-    cout<<"lb to as:"<<endl;
-    cout<<"lb:("<<lb_conner.x<<" ,"<<lb_conner.y;
-    cout<<"   as"<<" as:("<<as.width<<" "<<as.height<<"), as number: "<<g_v_as.size()<< endl;
     
     //b1  左下角往上，寻找右上角的x坐标
     as_right_x = MAX ;
@@ -645,11 +645,6 @@ void conner2as_lb(const conner & lb_conner)
     
     if (find(g_v_as.begin(), g_v_as.end(), as2) == g_v_as.end())
         g_v_as.push_back(as2);
-    cout<<"lb to as:"<<endl;
-    cout<<"lb:("<<lb_conner.x<<" ,"<<lb_conner.y;
-    cout<<"   as"<<" as:("<<as2.width<<" "<<as2.height<<", conflict:"<<as2.is_conflict<<"), as number: "<<g_v_as.size()<< endl;
-
-    
 }
 
 // 左上角算法
@@ -1030,15 +1025,9 @@ void update_action_space()
 {
     // 由角生成动作空间
             
-    cout<<"blocked size:"<<g_s_conner_blocked.size()<<endl;
     for (set<conner>::iterator it = g_s_conner2space.begin();
          it != g_s_conner2space.end()   ; ++it)
     {
-        if (g_s_conner_blocked.find(*it) != g_s_conner_blocked.end() )
-        {
-            cout<<"conner blocked:()"<<it->x<<","<<it->y<<")"<<endl;
-            continue;
-        }
         switch( it->conner_type  )
         {
         case LEFT_BOTTLE: conner2as_lb(*it);break;
@@ -1048,7 +1037,6 @@ void update_action_space()
         }
     }
     // 清除和小矩形重叠的动作空间
-    cout<<"erase as before:"<<g_v_as.size()<<endl;
     int number = 0;
     for (vector<action_space>::iterator it = g_v_as.begin(); it!= g_v_as.end(); ++it)
     {
@@ -1057,12 +1045,8 @@ void update_action_space()
             number++;
         }
     }
-    cout<<"conflicted:number:"<<number<<endl;
     g_v_as.erase( remove_if(g_v_as.begin(),g_v_as.end(),is_conflicted),
                   g_v_as.end() );
-    cout<<"erase as after:"<<g_v_as.size()<<endl;
-
-
 }
 
 // 输出最后数据
@@ -1408,7 +1392,7 @@ int backtrack2()
              it != g_v_action_kopt.end() ; ++it)
         {
             cout<<"before action:"<<endl;
-            print_data();
+//            print_data();
             i2chonse_rec =
                 find(g_v_rec_undo.begin(),g_v_rec_undo.end(),it->rec);
             print_kopt();
@@ -1432,17 +1416,17 @@ int backtrack2()
             data_push();
             update_data(i2chonse_rec,i2chonse_as);
             cout<<"end action:"<<endl;
-            print_data();
+//            print_data();
 
             area = backtrack2();
             if(area == g_as.get_area())
             {
                 cout<<": area:100%"<<" "<<area<<endl;
-                print_data();
+//                print_data();
                 
                 return max_area;
             }
-            cout<<"area:"<<area<<endl;
+//            cout<<"area:"<<area<<endl;
             if(max_area < area)
             {
                 max_area = area;
@@ -1465,10 +1449,17 @@ int backtrack2()
             break;
         
 //        data_pop();
+        cout<<"-------------------------chonse it : make cation:-------------------------"<<endl;
+        cout<<"ac:()"<<ac.rec.width<<", "<<ac.rec.height<<endl;
         i2chonse_rec =
                 find(g_v_rec_undo.begin(),g_v_rec_undo.end(),ac.rec);
         i2chonse_as = find(g_v_as.begin(),g_v_as.end(),ac.as);
+        cout<<"ac:()"<<i2chonse_rec->width<<", "<<i2chonse_rec->height<<endl;
+        cout<<"area:"<<max_area<<endl;
+
         update_data(i2chonse_rec,i2chonse_as);
+        print_data();
+        cout<<"-------------------------chonse it : make cation: end-------------------------"<<endl;
     }
     area = get_area();
 //    data_pop();
@@ -1532,12 +1523,17 @@ void data_pop()
 
     g_v_action_kopt = g_stk_v4kopt.top();
     g_stk_v4kopt.pop();
-
+    
     popfile<<"pop:"<<endl;
     if(g_v_action_kopt.size()==0)
         popfile<<"pop:size 0"<<endl;
 
-    output_pushpop();    
+    output_pushpop();
+
+    // cout<<"------------------------------here is pop------------------------------:"<<endl;
+    // print_data();
+    // cout<<"-----------------------------------pop end------------------------------"<<endl;
+    
 }
 
 

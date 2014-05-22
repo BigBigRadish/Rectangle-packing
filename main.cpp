@@ -263,7 +263,7 @@ void init()
     // 否则会导致 chose_as_rec 迭代时候，迭代器失效，因为
     g_v_as.reserve(200);
     g_v_as_backup.reserve(200);
-    g_v_action_kopt.reserve(15);
+    g_v_action_kopt.reserve(50);
     
 
     init_data();
@@ -1435,20 +1435,35 @@ int backtrack2()
             print_data();
 
             area = backtrack2();
-            
+            if(area == g_as.get_area())
+            {
+                cout<<": area:100%"<<" "<<area<<endl;
+                print_data();
+                
+                return max_area;
+            }
+            cout<<"area:"<<area<<endl;
             if(max_area < area)
             {
                 max_area = area;
                 ac = *it;
             }
             if (max_area == g_as.get_area())
-                break;
+                {
+                    cout<<"haha: area:100%"<<endl;
+                    return max_area;
+                    break;
+                }
+                    
             data_pop();
 
         }
         g_v_action_kopt.clear();
+        g_backtrack_mark = 1 ;
+
         if (max_area == g_as.get_area())
-                break;
+            break;
+        
 //        data_pop();
         i2chonse_rec =
                 find(g_v_rec_undo.begin(),g_v_rec_undo.end(),ac.rec);
@@ -1484,7 +1499,7 @@ void data_push()
     popfile<<"push:"<<endl;
     output_pushpop();
     
-    print_data();
+//    print_data();
     g_stk_v4hl.push( g_v_hline );
     g_stk_v4vl.push( g_v_vline);
     g_stk_v4rec_undo.push( g_v_rec_undo);

@@ -230,6 +230,9 @@ int backtrack2();
 bool conner_check(const conner & cn,int conner_type);
 
 
+//在待加工矩形块集合中，选择加工时间最长的和 rec相等的举行块
+void chonse_biggest_time_rec(vector<rectangle>::iterator &i2rec,const rectangle & rec);
+
 
 
 
@@ -1399,8 +1402,10 @@ int backtrack2()
              it != g_v_action_kopt.end() ; ++it)
         {
 //            cout<<"before action:"<<endl;
-            i2chonse_rec =
-                find(g_v_rec_undo.begin(),g_v_rec_undo.end(),it->rec);
+            // i2chonse_rec =
+            //     find(g_v_rec_undo.begin(),g_v_rec_undo.end(),it->rec);
+            chonse_biggest_time_rec(i2chonse_rec,it->rec);
+            
             if(i2chonse_rec == g_v_rec_undo.end())
                 cout<<"not find"<<endl;
             *i2chonse_rec = it->rec;
@@ -1438,8 +1443,10 @@ int backtrack2()
 //        data_pop();
 //        cout<<"-------------------------chonse it : make cation:-------------------------"<<endl;
 //        cout<<"ac:()"<<ac.rec.width<<", "<<ac.rec.height<<endl;
-        i2chonse_rec =
-                find(g_v_rec_undo.begin(),g_v_rec_undo.end(),ac.rec);
+        // i2chonse_rec =
+        //         find(g_v_rec_undo.begin(),g_v_rec_undo.end(),ac.rec);
+        chonse_biggest_time_rec(i2chonse_rec,ac.rec);
+        
         i2chonse_as = find(g_v_as.begin(),g_v_as.end(),ac.as);
 //        cout<<"ac:()"<<i2chonse_rec->width<<", "<<i2chonse_rec->height<<endl;
 //        cout<<"area:"<<max_area<<endl;

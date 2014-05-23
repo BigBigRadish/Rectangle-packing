@@ -1389,6 +1389,9 @@ int backtrack2()
     
     while(chose_as_rec(i2chonse_rec,i2chonse_as))
     {
+        // 反向排序，这样g_v_action中数据按从大到小排序
+        sort(g_v_action_kopt.rbegin(),g_v_action_kopt.rend());
+        
         max_area = 0;
         g_backtrack_mark = 0 ;
         for (vector<conner_action>::iterator
@@ -1550,4 +1553,21 @@ bool conner_check(const conner & cn,int conner_type)
         }
     }
     return 1;
+}
+
+
+// 在同等条件下，选择加工时间最长的那个举行块，
+// 即在矩形宽高相等的情况下，选择加工时间最长的那个
+void chonse_biggest_time_rec(vector<rectangle>::iterator &i2rec,const rectangle & rec)
+{
+    int time = 0;
+    i2rec = g_v_rec_undo.end();
+    for (vector<rectangle>::iterator it = g_v_rec_undo.begin(); it != g_v_rec_undo.end(); it++)
+    {
+        if (*it == rec && it->time > time)
+        {
+            i2rec = it;
+            time = it->time;
+        }
+    }
 }

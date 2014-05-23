@@ -238,7 +238,7 @@ public:
             else
                 return 0;
         }
-    bool operator==(const rectangle & _rec)
+    bool operator==(const rectangle & _rec) const
     {
         if (min(width,height) == min(_rec.width,_rec.height)
             && max(width,height) == max(_rec.width,_rec.height)
@@ -247,7 +247,7 @@ public:
         else
             return 0;
     }
-    bool operator<( const rectangle & _rec)
+    bool operator<( const rectangle & _rec) const
         {
             if (*this == _rec || *this > _rec)
                 return 0;
@@ -413,7 +413,7 @@ class conner_action
 public:
     conner_action(const fit_degree & _fd,const rectangle & _rec,const action_space & _as)
         :fd(_fd),rec(_rec),as(_as){    }
-    bool operator<(const conner_action & _ac)
+    bool operator<(const conner_action & _ac)const
         {
             if (fd < _ac.fd)
                 return 1;

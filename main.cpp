@@ -188,6 +188,8 @@ void update_kopt( const fit_degree & fd,
 
 int get_area();
 
+
+
 // 初始化动作空间和线信息
 void init_data();
 
@@ -374,12 +376,13 @@ int calculate_fd_s(vector<rectangle>::iterator i2rec,
     action_space as_chonse;
 
     // backup
-    g_s_conner_backup = g_s_conner;
-    g_v_as_backup = g_v_as;
+    // g_s_conner_backup = g_s_conner;
+    // g_v_as_backup = g_v_as;
     
-    g_v_hline_backup = g_v_hline;
-    g_v_vline_backup = g_v_vline;
-
+    // g_v_hline_backup = g_v_hline;
+    // g_v_vline_backup = g_v_vline;
+    data_push();
+    
     rec_chonse = *i2rec;
     as_chonse = *i2as;
     find_conflict_as(*i2rec);
@@ -390,10 +393,11 @@ int calculate_fd_s(vector<rectangle>::iterator i2rec,
     int s = g_v_as.size();
 
     // restor
-    g_v_as = g_v_as_backup;
-    g_s_conner = g_s_conner_backup;
-    g_v_hline = g_v_hline_backup;
-    g_v_vline = g_v_vline_backup;
+    // g_v_as = g_v_as_backup;
+    // g_s_conner = g_s_conner_backup;
+    // g_v_hline = g_v_hline_backup;
+    // g_v_vline = g_v_vline_backup;
+    data_pop();
 
     return 0-s;
 }
@@ -538,6 +542,7 @@ bool  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     case RIGHT_TOP:
         i2rec->set_ordinate_rt(i2as->right_top() );break;
     default:
+        
         cout<<"error";
         cout<<"rec:"<<i2rec->width<<" "<<i2rec->height;
         cout<<"  (:"<<i2rec->left_bottle.x<<" "<<i2rec->left_bottle.y<<" )";
@@ -1125,8 +1130,8 @@ int backtrack()
         i2chonse_rec = find(g_v_rec_undo.begin(),g_v_rec_undo.end(),rec_chonse);
         i2chonse_as = find(g_v_as.begin(),g_v_as.end(),as_chonse);
         update_data(i2chonse_rec,i2chonse_as);
-        cout<<"ont action:"<<endl;
-        print_data();
+//        cout<<"ont action:"<<endl;
+//        print_data();
 
         // 回溯法完成一次占角,选择下一个
     }
@@ -1167,6 +1172,7 @@ int get_area()
         area += it->get_area();
     return area;
 }
+
 
 // 选择最优的小木块和动作空间后，完成一次占角，更新数据
 void update_data(vector<rectangle>::iterator  i2chonse_rec,
@@ -1219,7 +1225,7 @@ void task_scheduling()
         print_schedule(time_total,number);
         output_data(number,time_total);
         init_data();
-        print_data();
+//        print_data();
         
      }
 }
@@ -1389,7 +1395,7 @@ int backtrack2()
                  it = g_v_action_kopt.begin();
              it != g_v_action_kopt.end() ; ++it)
         {
-            cout<<"before action:"<<endl;
+//            cout<<"before action:"<<endl;
             i2chonse_rec =
                 find(g_v_rec_undo.begin(),g_v_rec_undo.end(),it->rec);
             if(i2chonse_rec == g_v_rec_undo.end())
@@ -1406,12 +1412,12 @@ int backtrack2()
                 max_area = area;
                 ac = *it;
             }
-            if(area == g_as.get_area())
+            if(area == g_as.get_area() || g_v_rec_undo.size()==0 )
             {
-                return max_area;
+                return area;
             }
 
-            if (max_area == g_as.get_area())
+            if (max_area == g_as.get_area() || g_v_rec_undo.size() == 0)
             {
                 return max_area;
                 break;
@@ -1427,17 +1433,17 @@ int backtrack2()
             break;
         
 //        data_pop();
-        cout<<"-------------------------chonse it : make cation:-------------------------"<<endl;
-        cout<<"ac:()"<<ac.rec.width<<", "<<ac.rec.height<<endl;
+//        cout<<"-------------------------chonse it : make cation:-------------------------"<<endl;
+//        cout<<"ac:()"<<ac.rec.width<<", "<<ac.rec.height<<endl;
         i2chonse_rec =
                 find(g_v_rec_undo.begin(),g_v_rec_undo.end(),ac.rec);
         i2chonse_as = find(g_v_as.begin(),g_v_as.end(),ac.as);
-        cout<<"ac:()"<<i2chonse_rec->width<<", "<<i2chonse_rec->height<<endl;
-        cout<<"area:"<<max_area<<endl;
+//        cout<<"ac:()"<<i2chonse_rec->width<<", "<<i2chonse_rec->height<<endl;
+//        cout<<"area:"<<max_area<<endl;
 
         update_data(i2chonse_rec,i2chonse_as);
-        print_data();
-        cout<<"-------------------------chonse it : make cation: end-------------------------"<<endl;
+//        print_data();
+//        cout<<"-------------------------chonse it : make cation: end-------------------------"<<endl;
     }
     area = get_area();
 //    data_pop();
@@ -1506,7 +1512,7 @@ void data_pop()
     if(g_v_action_kopt.size()==0)
         popfile<<"pop:size 0"<<endl;
 
-    output_pushpop();
+//    output_pushpop();
 
     // cout<<"------------------------------here is pop------------------------------:"<<endl;
     // print_data();

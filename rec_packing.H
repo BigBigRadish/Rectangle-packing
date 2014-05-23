@@ -124,6 +124,10 @@ public:
     rectangle(const conner & _left_bottle, int _width, int _height )
         :left_bottle(_left_bottle),width(_width),
          height(_height),reverse_mode(0){    }
+    rectangle(const conner & _left_bottle, int _width,
+              int _height,int _place_type)
+        :left_bottle(_left_bottle),width(_width),
+         height(_height),reverse_mode(0),place_type(_place_type){    }
     
     rectangle(int _width, int _height )
         :left_bottle(0,0),width(_width),height(_height),reverse_mode(0){    }
@@ -259,12 +263,17 @@ public:
     action_space(const conner & _left_bottle, int _width=0, int _height=0):
         rectangle(_left_bottle,_width,_height),is_conflict(0){    }
     action_space(const action_space & as):
-        rectangle(as.left_bottle,as.width,as.height),is_conflict(as.is_conflict){    }
-    // action_space & operator=(const action_space & as)
-    // {
-        
-    // }
-                                          
+        rectangle(as.left_bottle,as.width,as.height,as.place_type),
+        is_conflict(as.is_conflict){    }
+    
+    action_space & operator=(const action_space & as)
+        {
+            rectangle::left_bottle = as.left_bottle;
+            rectangle::width = as.width;
+            rectangle::height = as.height;
+            rectangle::place_type = as.place_type;
+        }
+    
     bool is_conflict; // 是否被新放入的木块重叠
     bool operator==(const action_space & _as)
         {

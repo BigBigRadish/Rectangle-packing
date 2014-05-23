@@ -1471,8 +1471,8 @@ void output_pushpop()
 void data_push()
 {
 
-    popfile<<"push:"<<endl;
-    output_pushpop();
+//    popfile<<"push:"<<endl;
+//    output_pushpop();
     
 //    print_data();
     g_stk_v4hl.push( g_v_hline );
@@ -1508,9 +1508,9 @@ void data_pop()
     g_v_action_kopt = g_stk_v4kopt.top();
     g_stk_v4kopt.pop();
     
-    popfile<<"pop:"<<endl;
-    if(g_v_action_kopt.size()==0)
-        popfile<<"pop:size 0"<<endl;
+    // popfile<<"pop:"<<endl;
+    // if(g_v_action_kopt.size()==0)
+    //     popfile<<"pop:size 0"<<endl;
 
 //    output_pushpop();
 

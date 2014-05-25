@@ -27,17 +27,6 @@ stack< vector<conner_action> > g_stk_v4kopt;
 
 
 // 
-vector<Hline> g_v_hline4backtrack; // 回溯算法用来保存回溯前的状态
-
-vector<Vline> g_v_vline4backtrack;
-
-vector<rectangle> g_v_rec_undo4backtrack;
-
-vector<rectangle> g_v_rec_done4backtrack;
-
-vector<action_space> g_v_as4backtrack;
-set<conner> g_s_conner4backtrack; //
-
 int g_backtrack_mark = 1 ; // 用来标记是回溯过程还是正常的迭代过程;1表示回溯
 
 // 前k个最优的占角动作
@@ -45,16 +34,8 @@ vector<conner_action> g_v_action_kopt;
 int  g_optnumber = 5;
 
 
-
-
-
 vector<Hline> g_v_hline; // 所有水平线
 vector<Vline> g_v_vline ; // 所有垂直线
-vector<Hline> g_v_hline_backup; // 所有水平线
-vector<Vline> g_v_vline_backup ; // 所有垂直线
-
-
-
 
 
 vector<rectangle> g_v_rec_undo ; // 未处理的小矩形
@@ -63,25 +44,16 @@ vector<rectangle> g_v_rec_scheduled;//时间调度已经加工完的小举行块
 
 
 
-
-
-vector<action_space> g_v_as_backup; // 因为要计算平整度，所以备份动作空间
 vector<action_space> g_v_as ; // 动作空间
-
 vector<action_space> g_v_as_conflict ;// 保存被放入矩形影响的动作空间
 
-
-
-
 set<conner> g_s_conner; // 所有的实角
-set<conner> g_s_conner_backup; // 备份
 
 
 set<conner> g_s_conner_blocked; // 记录当前被屏蔽的角
 set<conner> g_s_conner2space; // 每次新生成的角,新动作空间从这些角产生
 
 // 
-
 
 action_space g_as(conner(0,0,0),0,0);
 ofstream ofile("output.txt");
@@ -178,9 +150,7 @@ void deal();
 // 回溯算法
 int backtrack();
 
-void restore();
 
-void backup();
     
 void update_kopt( const fit_degree & fd,
                   const rectangle & rec,
@@ -267,7 +237,6 @@ void init()
     // 预分配空间
     // 否则会导致 chose_as_rec 迭代时候，迭代器失效，因为
     g_v_as.reserve(200);
-    g_v_as_backup.reserve(200);
     g_v_action_kopt.reserve(50);
     g_v_rec_undo.reserve(100);
     g_v_rec_done.reserve(100);
@@ -379,11 +348,6 @@ int calculate_fd_s(vector<rectangle>::iterator i2rec,
     action_space as_chonse;
 
     // backup
-    // g_s_conner_backup = g_s_conner;
-    // g_v_as_backup = g_v_as;
-    
-    // g_v_hline_backup = g_v_hline;
-    // g_v_vline_backup = g_v_vline;
     data_push();
     
     rec_chonse = *i2rec;
@@ -395,16 +359,10 @@ int calculate_fd_s(vector<rectangle>::iterator i2rec,
     
     int s = g_v_as.size();
 
-    // restor
-    // g_v_as = g_v_as_backup;
-    // g_s_conner = g_s_conner_backup;
-    // g_v_hline = g_v_hline_backup;
-    // g_v_vline = g_v_vline_backup;
+    // restore
     data_pop();
-
     return 0-s;
 }
-
 
 // 计算它贴边数
 int  calculate_fd_p(vector<rectangle>::iterator i2rec,
@@ -1082,65 +1040,6 @@ bool is_conflicted(const action_space& as)
 }
 
 
-int backtrack()
-{
-    vector<rectangle>::iterator i2chonse_rec = g_v_rec_undo.begin();
-    vector<action_space>::iterator i2chonse_as = g_v_as.begin();
-    rectangle rec_chonse ;
-    action_space as_chonse;
-    int area = 0 ;
-    int max_area = 0 ;
-    // 选则前 g_optnumber 个最优的占角动作
-    // while判定条件中的chose_as_rec 仅仅用来找到前 g_optnumber个最优占角动作
-    while(chose_as_rec(i2chonse_rec,i2chonse_as))
-    {
-        backup();
-        g_backtrack_mark = 0;
-        print_kopt();
-        
-
-        // 对前g_optnumber个最优占角动作，使每个都走到最后，算出面积利用率最大的一个
-        // 用这个来完成真正的以此占角
-        for (vector<conner_action>::iterator it = g_v_action_kopt.begin();
-             it != g_v_action_kopt.end() ; ++it)
-        {
-            restore();
-            i2chonse_rec = find(g_v_rec_undo.begin(),g_v_rec_undo.end(),it->rec);
-            i2chonse_as = find(g_v_as.begin(),g_v_as.end(),it->as);
-            do
-            {
-                update_data(i2chonse_rec,i2chonse_as);
-                
-            }while(chose_as_rec(i2chonse_rec,i2chonse_as));
-            area = get_area();
-            if (max_area < area)
-            {
-                max_area = area;
-                rec_chonse = it->rec;
-                as_chonse = it->as;
-            }
-            if (area == g_as.get_area())
-                break;
-        }
-        g_backtrack_mark = 1;
-        g_v_action_kopt.clear();
-
-        // 如果面积利用率100,则直接退出
-        if (max_area == g_as.get_area())
-            break;
-        // 回溯到选择前的状态，用最优的进行占角
-        restore();
-        i2chonse_rec = find(g_v_rec_undo.begin(),g_v_rec_undo.end(),rec_chonse);
-        i2chonse_as = find(g_v_as.begin(),g_v_as.end(),as_chonse);
-        update_data(i2chonse_rec,i2chonse_as);
-//        cout<<"ont action:"<<endl;
-//        print_data();
-
-        // 回溯法完成一次占角,选择下一个
-    }
-    return max_area;
-}
-
 void update_kopt( const fit_degree & fd,
                   const rectangle & rec,
                   const action_space & as)
@@ -1189,25 +1088,6 @@ void update_data(vector<rectangle>::iterator  i2chonse_rec,
     g_v_rec_undo.erase(i2chonse_rec);
 }
 
-void backup()
-{
-    g_v_hline4backtrack = g_v_hline;
-    g_v_vline4backtrack = g_v_vline;
-    g_v_rec_undo4backtrack = g_v_rec_undo;
-    g_v_rec_done4backtrack = g_v_rec_done;
-    g_v_as4backtrack = g_v_as;
-    g_s_conner4backtrack = g_s_conner; // 所有的实角
-}
-
-void restore()
-{
-    g_v_hline = g_v_hline4backtrack ;
-    g_v_vline = g_v_vline4backtrack ;
-    g_v_rec_undo =  g_v_rec_undo4backtrack ;
-    g_v_rec_done =     g_v_rec_done4backtrack ;
-    g_v_as =  g_v_as4backtrack;
-    g_s_conner = g_s_conner4backtrack ; // 所有的实角
-}
 
 void task_scheduling()
 {
@@ -1238,23 +1118,12 @@ void task_scheduling()
 void init_data()
 {
     g_v_as.clear();
-    g_v_as_backup.clear();
     g_v_as_conflict.clear();
-    g_v_as4backtrack.clear();
-    g_v_rec_undo4backtrack.clear();
-    g_v_rec_done4backtrack.clear();
-    g_v_hline4backtrack.clear();
-    g_v_vline4backtrack.clear();
-    g_s_conner4backtrack.clear();
     g_v_action_kopt.clear();
-    g_v_hline_backup.clear();
-    g_v_vline_backup.clear();
     g_v_rec_done.clear();
-    g_s_conner_backup.clear();
     g_s_conner_blocked.clear();
     g_s_conner2space.clear();
 
-    
     g_v_as.push_back(g_as);
     
     g_backtrack_mark = 1;

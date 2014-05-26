@@ -47,6 +47,8 @@ int main(int arg ,char *arv[])
     cout<<get_rec_number()<<endl;
     rec_merge();
     output_data();
+    check();
+    
     return 0;
             
     
@@ -173,4 +175,31 @@ void output_data()
              itv != it->end() ; ++itv)
             ofile<<itv->width<<"  "<<itv->height<<"  "<<itv->time<<endl;
     }
+}
+
+bool check()
+{
+    int number = 0;
+    int area = 0;
+    int time_sum = 0;
+    cout<<"number check: source recs:"<<g_opt_time;
+
+    for (vector< vector<rectangle>  > :: iterator it = g_vrecset.begin() ;
+         it != g_vrecset.end(); ++it)
+    {
+        number += it->size();
+        for (vector<rectangle>::iterator itv = it->begin();
+             itv != it->end() ; ++itv)
+        {
+            time_sum += itv->time;
+            area += itv->width * itv->height;
+        }
+        
+    }
+    cout<<"target rec:"<<number;
+    cout<<" time sum:"<<time_sum<<endl;
+
+    cout<<"area check: source area:"<<g_width * g_height * g_opt_time<<endl;
+    cout<<"garget source:"<<area<<endl;
+    
 }

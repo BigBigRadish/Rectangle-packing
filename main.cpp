@@ -1283,7 +1283,7 @@ int backtrack2()
     while(chose_as_rec(i2chonse_rec,i2chonse_as))
     {
         // 反向排序，这样g_v_action中数据按从大到小排序
-        sort(g_v_action_kopt.rbegin(),g_v_action_kopt.rend());
+//        sort(g_v_action_kopt.rbegin(),g_v_action_kopt.rend());
         
         max_area = 0;
 //        g_backtrack_mark = 0 ;
@@ -1310,7 +1310,7 @@ int backtrack2()
 
             
 
-            if(area == g_as.get_area())
+            if(area == g_as.get_area() || g_v_rec_undo.size()==0)
             {
                 return area;
             }
@@ -1323,7 +1323,7 @@ int backtrack2()
                 
                 max_area = area;
                 ac = *it;
-                cout<<it->rec.width;
+//                cout<<it->rec.width<<endl;
 //                cout<<"  kopt size:"<<g_v_action_kopt.size()<<endl;
             }
 

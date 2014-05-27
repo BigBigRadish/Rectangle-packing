@@ -37,6 +37,8 @@ void output_data();
 
 int get_rec_number();
 
+bool check();
+
 
 
 int main(int arg ,char *arv[])
@@ -166,7 +168,7 @@ void output_data()
 {
     
     ofstream ofile("data.txt");
-    ofile<<g_width<<" "<<g_height<<endl;
+    ofile<<g_width<<" "<<g_height<<" "<<g_opt_time<<" "<<endl;
     ofile<<get_rec_number()<<endl;
     for (vector< vector<rectangle>  > :: iterator it = g_vrecset.begin() ;
          it != g_vrecset.end(); ++it)
@@ -192,7 +194,7 @@ bool check()
              itv != it->end() ; ++itv)
         {
             time_sum += itv->time;
-            area += itv->width * itv->height;
+            area += itv->width * itv->height * itv->time;
         }
         
     }

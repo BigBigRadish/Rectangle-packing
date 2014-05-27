@@ -199,6 +199,8 @@ bool conner_check(const conner & cn,int conner_type);
 void chonse_biggest_time_rec(vector<rectangle>::iterator &i2rec,const rectangle & rec);
 
 
+bool rec_equal_test_withtime(const rectangle &rec1, const rectangle &rec2);
+
 
 
 int main(int arg ,char *arv[])
@@ -227,6 +229,7 @@ void init()
         ifile >> rec.width;
         ifile >> rec.height;
         ifile >> rec.time ;
+        rec.id = i ;
         g_v_rec_undo.push_back(rec);
     }
     // 预分配空间
@@ -1025,7 +1028,7 @@ void output_data(int number, int time)
         area+= it->get_area();
     ofile<<"  area:"<<area<<endl;
     for (vector<rectangle>::iterator it = g_v_rec_done.begin(); it != g_v_rec_done.end(); it++)
-        ofile<<it->width<<"   "<<it->height<<"     ("<<it->left_bottle.x<<" , "<<
+        ofile<<"R"<<it->id<<"   "<<it->width<<"   "<<it->height<<"     ("<<it->left_bottle.x<<" , "<<
             it->left_bottle.y<<")"<<"    "<<it->reverse_mode<<endl;
 }
 
@@ -1058,12 +1061,8 @@ void update_kopt( const fit_degree & fd,
     else
     {
         it = min_element(g_v_action_kopt.begin(),g_v_action_kopt.end());
-        if (it->fd < fd  || (fd == it->fd && rec > it->rec) )
-        {
-            it->fd = fd;
-            it->rec = rec;
-            it->as = as;
-        }
+        if (*it < conner_action(fd,rec,as))
+            *it = conner_action(fd,rec,as);
     }
 }
 
@@ -1215,7 +1214,7 @@ void print_schedule(int time,int number)
         area+= it->get_area();
     cout<<"P"<<number<<"  time:"<<time<<"  area:"<<area<<endl;
     for (vector<rectangle>::iterator it = g_v_rec_done.begin(); it != g_v_rec_done.end(); it++)
-        cout<<it->width<<"   "<<it->height<<"     ("<<it->left_bottle.x<<" , "<<
+        cout<<"R"<<it->id<<"  "<<it->width<<"   "<<it->height<<"     ("<<it->left_bottle.x<<" , "<<
             it->left_bottle.y<<")"<<"    "<<it->reverse_mode<<endl;
     cout<<"end once task"<<endl;
 }
@@ -1283,7 +1282,7 @@ int backtrack2()
     while(chose_as_rec(i2chonse_rec,i2chonse_as))
     {
         // 反向排序，这样g_v_action中数据按从大到小排序
-//        sort(g_v_action_kopt.rbegin(),g_v_action_kopt.rend());
+        sort(g_v_action_kopt.rbegin(),g_v_action_kopt.rend());
         
         max_area = 0;
 //        g_backtrack_mark = 0 ;
@@ -1479,7 +1478,7 @@ bool is_schedule_valid()
     // 求是否为子集
     if (includes(g_v_rec_done.begin(),g_v_rec_done.end(),
                  g_v_rec_last_unfinished.begin(),g_v_rec_last_unfinished.end(),
-                     rec_equal_test_withtime) )
+                 rec_equal_test_withtime) )
         return 1;
     return 0;
 }

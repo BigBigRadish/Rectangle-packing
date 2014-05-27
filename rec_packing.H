@@ -117,9 +117,11 @@ public:
     bool reverse_mode ; // 是否旋转：1 旋转; 0未选转
      int place_type; // 放置类型,-1表示还未放置
                      // 取值 LEFT_BOTTLE,LEFT_TOP,RIGHT_BOTTLE, RIGHT_TOP
-    int time;
+    int time; // 记录时间
+    int id; // 记录编号
+    
     rectangle():left_bottle(0,0),width(0),height(0),
-                reverse_mode(0),place_type(-1),time(0){    }
+                reverse_mode(0),place_type(-1),time(0),id(-1){    }
 
     rectangle(const conner & _left_bottle, int _width, int _height )
         :left_bottle(_left_bottle),width(_width),
@@ -130,12 +132,12 @@ public:
          height(_height),reverse_mode(0),place_type(_place_type){    }
     
     rectangle(int _width, int _height )
-        :left_bottle(0,0),width(_width),height(_height),reverse_mode(0){    }
+        :left_bottle(0,0),width(_width),height(_height),reverse_mode(0),id(-1){    }
 
     rectangle(const rectangle & _rec)
         :left_bottle(_rec.left_bottle),width(_rec.width),height(_rec.height),
          reverse_mode(_rec.reverse_mode),
-         place_type(_rec.place_type),time(_rec.time)
+         place_type(_rec.place_type),time(_rec.time),id(_rec.id)
         {    }
 
     rectangle & operator=(const rectangle & _rec)
@@ -146,6 +148,7 @@ public:
         reverse_mode = _rec.reverse_mode ;
         place_type = _rec.place_type;
         time = _rec.time;
+        id = _rec.id;
         return *this;
     }
 
@@ -247,6 +250,13 @@ public:
         else
             return 0;
     }
+    bool is_equal_withtime(const rectangle & _rec) const
+        {
+            if (*this == _rec && time == _rec.time)
+                return 1;
+            else
+                return 0;
+        }
     bool operator<( const rectangle & _rec) const
         {
             if (*this == _rec || *this > _rec)
@@ -408,6 +418,8 @@ public:
 };
 
 
+// 占角动作优先考虑时间
+// 时间越大，越优先
 class conner_action
 {
 public:
@@ -415,21 +427,28 @@ public:
         :fd(_fd),rec(_rec),as(_as){    }
     bool operator<(const conner_action & _ac)const
         {
-            if (fd < _ac.fd)
+            if (rec.time < _ac.rec.time)
                 return 1;
-            else if (fd == _ac.fd)
+            else if (rec.time == _ac.rec.time)
             {
-                if (rec < _ac.rec)
+                if (fd < _ac.fd)
                     return 1;
+                else if (fd == _ac.fd)
+                {
+                    if (rec < _ac.rec)
+                        return 1;
+                    else
+                        return 0 ;
+                }
                 else
-                    return 0 ;
+                    return 0;
             }
             else
                 return 0;
         }
     bool operator ==(const conner_action &_ac)
         {
-            if (fd == _ac.fd && rec == _ac.rec && as == _ac.as)
+            if (fd == _ac.fd && rec.is_equal_withtime(_ac.rec)  && as == _ac.as)
                 return 1;
             else
                 return 0;

@@ -15,11 +15,7 @@
 using namespace std;
 
 vector< vector<rectangle> > g_vrecset;
-
-
-void rec_sub();
-
-void init();
+vector< rectangle> g_rec ;
 
 int g_width;
 int g_height;
@@ -27,30 +23,46 @@ int g_opt_time;
 
 int g_rec_number_uplimit;
 
+// 对矩形块集合进行分割
+void rec_sub();
 
-
-void rec_merge();
+//随机 分割矩形块 rec 为两个小举行块rec1 rec2
 bool rec_cut(const rectangle rec, rectangle & rec1 ,rectangle & rec2);
 
+// 集合合并
+void rec_merge();
 
+// 初始化，即输入数据:矩形框宽，高，最优解时间，
+// 以及最后分割后矩形块个数的上限
+void init();
+
+// 将集合中的数据放入 vector中
+void push_data2vec();
+
+// 将 vector中数据进行随机洗牌
+void shullfle_datas();
+
+
+// 输出数据到文件中
+// 第一行：矩形框 宽，高，最优解
+// 第二行：矩形块个数
 void output_data();
 
+// 矩形块个数
 int get_rec_number();
 
+// 检查分割算法是否正确
 bool check();
-
-
 
 int main(int arg ,char *arv[])
 {
-
     init();
     rec_sub();
-    cout<<get_rec_number()<<endl;
     rec_merge();
+    push_data2vec();
+    shullfle_datas();
     output_data();
     check();
-    
     return 0;
             
     
@@ -59,6 +71,7 @@ int main(int arg ,char *arv[])
 
 void init()
 {
+    cout<<"please input the big rec width,height,opt_time & rec up limit:"<<endl;
     cin>>g_width;
     cin>>g_height>>g_opt_time>>g_rec_number_uplimit;
     if (g_rec_number_uplimit > g_width* g_height * g_opt_time)
@@ -169,23 +182,18 @@ void output_data()
     
     ofstream ofile("data.txt");
     ofile<<g_width<<" "<<g_height<<" "<<g_opt_time<<" "<<endl;
-    ofile<<get_rec_number()<<endl;
-    for (vector< vector<rectangle>  > :: iterator it = g_vrecset.begin() ;
-         it != g_vrecset.end(); ++it)
-    {
-        for (vector<rectangle>::iterator itv = it->begin();
-             itv != it->end() ; ++itv)
-            ofile<<itv->width<<"  "<<itv->height<<"  "<<itv->time<<endl;
-    }
+    ofile<<g_rec.size()<<endl;
+    for (vector<rectangle>::iterator it = g_rec.begin(); it != g_rec.end(); ++it)
+        ofile<<it->width<<" "<<it->height<<" "<<it->time<<endl;
 }
 
 bool check()
 {
+    bool error_mark = 1;
     int number = 0;
     int area = 0;
     int time_sum = 0;
-    cout<<"number check: source recs:"<<g_opt_time;
-
+    
     for (vector< vector<rectangle>  > :: iterator it = g_vrecset.begin() ;
          it != g_vrecset.end(); ++it)
     {
@@ -198,10 +206,42 @@ bool check()
         }
         
     }
-    cout<<"target rec:"<<number;
-    cout<<" time sum:"<<time_sum<<endl;
+    if (time_sum != g_rec_number_uplimit)
+    {
+        cout<<"rec number error"<<endl;
+        error_mark = 0;
+    }
+    if (area != g_width * g_height * g_opt_time)
+    {
+        cout<<"area error"<<endl;
+        error_mark = 0;
+    }
+    if (error_mark == 0)
+    {
+        cout<<" 矩形块个数:"<<number<<endl;
+        cout<<" 合并前个数:"<<time_sum<<endl;
+        cout<<"合并前理论个数："<< g_rec_number_uplimit<<endl;
 
-    cout<<"area check: source area:"<<g_width * g_height * g_opt_time<<endl;
-    cout<<"garget source:"<<area<<endl;
+        cout<<"理论面积和:"<<g_width * g_height * g_opt_time<<endl;
+        cout<<"实际面积和:"<<area<<endl;
+    }
     
+    return error_mark;
+}
+
+
+void push_data2vec()
+{
+    for (vector< vector<rectangle>  > :: iterator it = g_vrecset.begin() ;
+         it != g_vrecset.end(); ++it)
+    {
+        for (vector<rectangle>::iterator itv = it->begin();
+             itv != it->end() ; ++itv)
+            g_rec.push_back(*itv);
+    }
+}
+
+void shullfle_datas()
+{
+    random_shuffle(g_rec.begin(),g_rec.end());
 }

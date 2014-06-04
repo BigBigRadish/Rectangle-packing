@@ -61,57 +61,77 @@ public:
 };
 
 
+class point
+{
+public:
+    int x;
+    int y;
+    point(int _x ,int _y):x(_x),y(_y){    }
+    point(const point &_pt):x(_pt.x),y(_pt.y){    }
+    point & operator=(const point& _pt)
+    {
+        x = _pt.x;
+        y = _pt.y;
+        return *this;
+    }
+    bool operator<(const point & _pt)
+    {
+        if (x < _pt.x)
+            return 1;
+        else if( x == _pt.x)
+        {
+            if(y < _pt.y)
+                return 1;
+            else
+                return 0;
+        }
+        else
+            return 0;
+    }
+    bool operator==(const point & _pt)
+    {
+        if (x == _pt.x && y == _pt.y)
+            return 1;
+        return 0;
+    }
+};
+
+
 
 // 顶点
 class conner
 {
 public:
+    // is_valid = 1 实角 ; is_balid = 0 虚角
+    bool is_valid;
+    int  conner_type; //角类型
+    point pt; // 角坐标
     conner(int _x , int _y ,int _is_valid=0, int _conner_type = -1):
-        x(_x),y(_y),is_valid(_is_valid),conner_type(_conner_type){}
+        pt(_x,_y),is_balid(_is_valid),conner_type(_conner_type){}
     conner(const conner & _cn)
-        :x(_cn.x),y(_cn.y),is_valid(_cn.is_valid),conner_type (_cn.conner_type ){}
+        :pt(_cn.pt),is_balid(_cn.is_valid),conner_type(_cn.conner_type){}
 
     bool operator==(const conner & _cn)
         {
-            if (x == _cn.x && y == _cn.y)
-                return 1;
-            else
-                return 0;
+            return pt == _cn.pt;
         }
     conner & operator=(const conner & _cn)
     {
-        x = _cn.x;
-        y = _cn.y;
+        pt = _cn.pt
         is_valid = _cn.is_valid;
         conner_type = _cn.conner_type;
         return *this;
     }
     bool operator <(const conner & _cn) const
-        {
-            if (x < _cn.x)
-                return 1;
-            else if( x == _cn.x)
-                {
-                    if(y < _cn.y)
-                        return 1;
-                    else
-                        return 0;
-                }
-            else
-                return 0;
-        }
-    int x;
-    int y;
-    // is_valid = 1 实角 ; ctype = 0 虚角
-    bool is_valid;
-    int  conner_type; //
-    
+     {
+         return pt < _cn.pt;
+     }
 };
 
 class rectangle
 {
 public:
-    conner left_bottle; // 为了计算方便，把几个点都列出
+    point left_bottle; // 左下角
     int width; // 宽度
     int height; // 高度
     bool reverse_mode ; // 是否旋转：1 旋转; 0未选转
@@ -123,10 +143,10 @@ public:
     rectangle():left_bottle(0,0),width(0),height(0),
                 reverse_mode(0),place_type(-1),time(0),id(-1){    }
 
-    rectangle(const conner & _left_bottle, int _width, int _height )
+    rectangle(const point & _left_bottle, int _width, int _height )
         :left_bottle(_left_bottle),width(_width),
          height(_height),reverse_mode(0){    }
-    rectangle(const conner & _left_bottle, int _width,
+    rectangle(const point & _left_bottle, int _width,
               int _height,int _place_type)
         :left_bottle(_left_bottle),width(_width),
          height(_height),reverse_mode(0),place_type(_place_type){    }
@@ -152,49 +172,49 @@ public:
         return *this;
     }
 
-    conner  left_top() const
+    point  left_top() const
         {
-            return conner(left_bottle.x,left_bottle.y + height,LEFT_TOP);
+            return point(left_bottle.x,left_bottle.y + height);
         }
 
-    conner  right_top() const
+    point  right_top() const
         {
-            return conner(left_bottle.x + width, left_bottle.y + height,RIGHT_TOP);
+            return point(left_bottle.x + width, left_bottle.y + height);
         }
 
-    conner  right_bottle() const
+    point  right_bottle() const
         {
-            return conner(left_bottle.x + width, left_bottle.y,RIGHT_BOTTLE);
+            return point(left_bottle.x + width, left_bottle.y);
         }
 
     // 从左下角设置左下角坐标
-    void set_ordinate_lb(const conner & _conner_lb)
+    void set_ordinate_lb(const point & _point_lb)
         {
-            left_bottle  = _conner_lb;
+            left_bottle  = _point_lb;
             place_type = LEFT_BOTTLE;
         }
 
     // 从坐上角设置左下角坐标
-    void set_ordinate_lt(const conner & _conner_lt)
+    void set_ordinate_lt(const point & _point_lt)
         {
-            left_bottle.x  = _conner_lt.x;
-            left_bottle.y  = _conner_lt.y - height;
+            left_bottle.x  = _point_lt.x;
+            left_bottle.y  = _point_lt.y - height;
             place_type = LEFT_TOP;
         }
 
     // 从右下角设置左下角坐标
-    void set_ordinate_rb(const conner & _conner_rb)
+    void set_ordinate_rb(const point & _point_rb)
         {
-            left_bottle.x  = _conner_rb.x - width;
-            left_bottle.y  = _conner_rb.y ;
+            left_bottle.x  = _point_rb.x - width;
+            left_bottle.y  = _point_rb.y ;
             place_type = RIGHT_BOTTLE;
         }
 
     // 从右上角设置左下角坐标
-    void set_ordinate_rt(const conner & _conner_rt)
+    void set_ordinate_rt(const point & _point_rt)
         {
-            left_bottle.x  = _conner_rt.x - width;
-            left_bottle.y  = _conner_rt.y - height;
+            left_bottle.x  = _point_rt.x - width;
+            left_bottle.y  = _point_rt.y - height;
             place_type = RIGHT_TOP;
         }
 
@@ -269,8 +289,10 @@ public:
 class action_space :public rectangle
 {
 public:
+    bool is_conflict; // 是否被新放入的木块重叠
+
     action_space():rectangle(0,0){    }
-    action_space(const conner & _left_bottle, int _width=0, int _height=0):
+    action_space(const point & _left_bottle, int _width=0, int _height=0):
         rectangle(_left_bottle,_width,_height),is_conflict(0){    }
     action_space(const action_space & as):
         rectangle(as.left_bottle,as.width,as.height,as.place_type),
@@ -278,13 +300,12 @@ public:
     
     action_space & operator=(const action_space & as)
         {
-            rectangle::left_bottle = as.left_bottle;
-            rectangle::width = as.width;
-            rectangle::height = as.height;
-            rectangle::place_type = as.place_type;
+            left_bottle = as.left_bottle;
+            width = as.width;
+            height = as.height;
+            place_type = as.place_type;
         }
     
-    bool is_conflict; // 是否被新放入的木块重叠
     bool operator==(const action_space & _as)
         {
             if (left_bottle == _as.left_bottle &&
@@ -293,6 +314,27 @@ public:
             else
                 return 0;
         }
+    bool operator<(const action_space & _as)
+    {
+        if(left_bottle < _as.left_bottle )
+            return 1;
+        else if (left_bottle == _as.left_bottle)
+        {
+            if (width < _as.width)
+                return 1;
+            else if (width == _as.width)
+            {
+                if (height < _as.height)
+                    return 1;
+                else
+                    return 0;
+            }
+            else
+                return 0;
+        }
+        else
+            return 0;
+    }
 };
 
 
@@ -300,7 +342,7 @@ public:
 class rectangle_conflict
 {
 public:
-    rectangle_conflict(const conner & _left_bottle,int _width,int _height)
+    rectangle_conflict(const point & _left_bottle,int _width,int _height)
         :rec_block(_left_bottle,_width,_height){    }
     
     // 判断动作空间 ac_space 是否和 矩形块 rec_block 有重叠
@@ -328,12 +370,12 @@ private:
 class Hline
 {
 public:
-    conner pt_left; // 左端点
-    conner pt_right; // 右端点
+    point pt_left; // 左端点
+    point pt_right; // 右端点
     int isblock;
     int line_type;
     
-    Hline( conner  _pt_left, conner  _pt_right,  int   _line_type)
+    Hline( point  _pt_left, point  _pt_right,  int   _line_type)
         :pt_left(_pt_left),pt_right(_pt_right),isblock(0),line_type(_line_type)
         {
         }
@@ -374,36 +416,24 @@ public:
 class Vline
 {
 public:
-    conner pt_bottle; // 底端点
-    conner pt_top; // 顶端点
+    point pt_bottle; // 底端点
+    point pt_top; // 顶端点
     int isblock;
     int line_type ;
-    Vline( conner  _pt_bottle, conner  _pt_top,int  _line_type)
-        :pt_bottle(_pt_bottle),pt_top(_pt_top),isblock(0),line_type(_line_type)
-        {
-        }
-    Vline(const Vline & vl):
-        pt_bottle(vl.pt_bottle),pt_top(vl.pt_top),isblock(vl.isblock),line_type(vl.line_type)
-        {
-            
-        }
+    Vline( point  _pt_bottle, point  _pt_top,int  _line_type)
+        :pt_bottle(_pt_bottle),pt_top(_pt_top),isblock(0),line_type(_line_type){}
+    Vline(const Vline & vl)
+        :pt_bottle(vl.pt_bottle),pt_top(vl.pt_top),isblock(vl.isblock),line_type(vl.line_type){}
     // 长度
     int get_length() const {return pt_top.y - pt_bottle.y;   } 
 
     // x坐标
-    int get_x() const
-        {
-            return pt_top.x;
-        }
+    int get_x() const {return pt_top.x;}
     
-    bool operator< ( const Vline & _vline) const 
-    {
-        return get_x() < _vline.get_x() ? 1: 0 ;
-    }
-    bool operator> ( const Vline & _vline)  const 
-    {
-        return get_x() > _vline.get_x() ? 1: 0 ;
-    }
+    bool operator< ( const Vline & _vline) const
+        {return get_x() < _vline.get_x() ? 1: 0 ;}
+    bool operator> ( const Vline & _vline)  const
+        {return get_x() > _vline.get_x() ? 1: 0 ;}
 
     bool conflict( const Vline & _vline) const
     {
@@ -415,6 +445,20 @@ public:
             return 1;
         return 0;
     }
+
+    bool is_higher(const Vline & _vline) const
+    {
+        if (pt_top.y >= _vline.pt_top.y)
+            return 1;
+        return 0;
+    }
+
+    bool is_lower(const Vline & _vline) const
+    {
+        if (pt_bottle.y <= _vline.pt_bottle.y)
+            return 1;
+        return 0;
+    }
 };
 
 
@@ -423,6 +467,10 @@ public:
 class conner_action
 {
 public:
+    fit_degree fd;
+    rectangle rec;
+    action_space as;
+    
     conner_action(const fit_degree & _fd,const rectangle & _rec,const action_space & _as)
         :fd(_fd),rec(_rec),as(_as){    }
     bool operator<(const conner_action & _ac)const
@@ -460,10 +508,6 @@ public:
         as = _ac.as;
         return *this;
     }
-    fit_degree fd;
-    rectangle rec;
-    action_space as;
-    
 };
 
      

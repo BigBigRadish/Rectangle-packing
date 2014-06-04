@@ -25,14 +25,9 @@ stack< vector<action_space> > g_stk_v4as;
 stack< set<conner> > g_stk_s4conner;
 stack< vector<conner_action> > g_stk_v4kopt;
 
-
-// 
-//int g_backtrack_mark = 1 ; // 用来标记是回溯过程还是正常的迭代过程;1表示回溯
-
 // 前k个最优的占角动作
 vector<conner_action> g_v_action_kopt;
 int  g_optnumber = 5;
-
 
 vector<Hline> g_v_hline; // 所有水平线
 vector<Vline> g_v_vline ; // 所有垂直线
@@ -43,13 +38,10 @@ vector<rectangle> g_v_rec_done ; // 已经处理的小矩形
 vector<rectangle> g_v_rec_scheduled;//时间调度已经加工完的小举行块
 vector<rectangle> g_v_rec_last_unfinished; // 保存上次调度未完成的举行块
 
-
-
 vector<action_space> g_v_as ; // 动作空间
 vector<action_space> g_v_as_conflict ;// 保存被放入矩形影响的动作空间
 
 set<conner> g_s_conner; // 所有的实角
-
 
 set<conner> g_s_conner_blocked; // 记录当前被屏蔽的角
 set<conner> g_s_conner2space; // 每次新生成的角,新动作空间从这些角产生
@@ -58,9 +50,6 @@ set<conner> g_s_conner2space; // 每次新生成的角,新动作空间从这些�
 
 action_space g_as(conner(0,0,0),0,0);
 ofstream ofile("output.txt");
-ofstream popfile("pushpop.xt");
-
-
 
 const int MAX = 999999;
 const int MIN = -99999;
@@ -153,8 +142,6 @@ void update_kopt( const fit_degree & fd,
 
 int get_area();
 
-
-
 // 初始化动作空间和线信息
 void init_data();
 
@@ -171,15 +158,9 @@ int update_rec_status();
 
 void print_schedule(int time,int number);
 
-//void print_undo();
-
-    
-    
 
 // 初始化操作
 void init();
-
-
 
 // 输出最后数据
 void output_data(int number, int time);
@@ -620,6 +601,20 @@ void conner2as_lb(const conner & lb_conner)
 // 左上角算法
 void conner2as_lt(const conner & lt_conner)
 {
+    //  寻找右边界，即右下角的x坐标
+    for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
+    {
+        // 寻找满足条件的x坐标最小的
+        if (it->get_x() > lt_conner.x && it->pt_bottle.y < lt_conner.y
+            && it->pt_top.y > as_bottle_y)
+        {
+            if (as_right_x > it->get_x() )
+                as_right_x = it->get_x();
+        }
+    }
+}
+void conner2as_lt(const conner & lt_conner)
+{
     int as_bottle_y = MIN;
     int as_right_x = MAX;
     // a1 先向下扩展，寻找下边界,即动作空间的右下角的y坐标
@@ -964,8 +959,6 @@ void find_conflict_as(const rectangle & rec)
 {
     g_v_as_conflict.clear();
     g_s_conner2space.clear();
-
-    
     rectangle_conflict rec_conflict(rec.left_bottle,rec.width,
                                     rec.height);
     for_each(g_v_as.begin(),g_v_as.end(),rec_conflict);
@@ -1036,8 +1029,6 @@ void output_data(int number, int time)
 
 bool is_conflicted(const action_space& as)
 {
-    // if (as.is_conflict)
-    //     return 1;
     if(as.is_conflict == 0)
         return 0;
     return 1;
@@ -1109,8 +1100,6 @@ void task_scheduling()
         output_data(number,time_total);
         cout<<g_v_rec_done.size()<<endl;
         init_data();
-//        print_data();
-        
      }
 }
 
@@ -1276,8 +1265,6 @@ int backtrack2()
     action_space as;
     conner_action ac(fd,rec,as);
     
-//    g_backtrack_mark = 1 ;
-//    g_v_action_kopt.clear();
     
     while(chose_as_rec(i2chonse_rec,i2chonse_as))
     {
@@ -1285,14 +1272,10 @@ int backtrack2()
         sort(g_v_action_kopt.rbegin(),g_v_action_kopt.rend());
         
         max_area = 0;
-//        g_backtrack_mark = 0 ;
         for (vector<conner_action>::iterator
                  it = g_v_action_kopt.begin();
              it != g_v_action_kopt.end() ; ++it)
         {
-//            cout<<"before action:"<<endl;
-            // i2chonse_rec =
-            //     find(g_v_rec_undo.begin(),g_v_rec_undo.end(),it->rec);
             chonse_biggest_time_rec(i2chonse_rec,it->rec);
             
             if(i2chonse_rec == g_v_rec_undo.end())
@@ -1300,39 +1283,24 @@ int backtrack2()
             *i2chonse_rec = it->rec;
             
             i2chonse_as = find(g_v_as.begin(),g_v_as.end(),it->as);
-
             data_push();
-//            cout<<"area:"<<area<<"   rec_done size:"<<g_v_rec_done.size()<<endl;
-
             update_data(i2chonse_rec,i2chonse_as);
             area = backtrack2();
-
-            
-
             if(area == g_as.get_area() || g_v_rec_undo.size()==0)
             {
                 return area;
             }
-
             data_pop();
-//            cout<<"pop: kopt.size "<<g_v_action_kopt.size()<<endl;
             if(max_area < area)
             {
-//                cout<<"max_area m:"<<area<<"  width";
-                
                 max_area = area;
                 ac = *it;
-//                cout<<it->rec.width<<endl;
-//                cout<<"  kopt size:"<<g_v_action_kopt.size()<<endl;
             }
-
         }
 
         if (max_area == g_as.get_area())
             break;
         
-        // i2chonse_rec =
-        //         find(g_v_rec_undo.begin(),g_v_rec_undo.end(),ac.rec);
         chonse_biggest_time_rec(i2chonse_rec,ac.rec);
         
         i2chonse_as = find(g_v_as.begin(),g_v_as.end(),ac.as);
@@ -1343,31 +1311,10 @@ int backtrack2()
     return area;
 }
 
-void output_pushpop()
-{
-    
-    vector<conner_action>::iterator it = g_v_action_kopt.end();
-
-    for (it =g_v_action_kopt.begin();
-         it != g_v_action_kopt.end();it++)
-    {
-        popfile<<"rec:"<<it->rec.width<<"  "<< it->rec.height<<"  ("<<it->rec.left_bottle.x;
-        popfile<<" "<<it->rec.left_bottle.y<<" )";
-        popfile<<"as:"<<it->as.width<<"  "<< it->as.height<<"  ("<<it->as.left_bottle.x;
-        popfile<<" "<<it->as.left_bottle.y<<" )"<<endl;
-    }
-    
-    
-}
 
 
 void data_push()
 {
-
-//    popfile<<"push:"<<endl;
-//    output_pushpop();
-    
-//    print_data();
     g_stk_v4hl.push( g_v_hline );
     g_stk_v4vl.push( g_v_vline);
     g_stk_v4rec_undo.push( g_v_rec_undo);
@@ -1375,7 +1322,6 @@ void data_push()
     g_stk_v4as.push(g_v_as);
     g_stk_s4conner.push( g_s_conner);
     g_stk_v4kopt.push( g_v_action_kopt);
-    //   g_v_action_kopt.clear();
 }
 
 void data_pop()
@@ -1400,16 +1346,6 @@ void data_pop()
 
     g_v_action_kopt = g_stk_v4kopt.top();
     g_stk_v4kopt.pop();
-    
-    // popfile<<"pop:"<<endl;
-    // if(g_v_action_kopt.size()==0)
-    //     popfile<<"pop:size 0"<<endl;
-
-//    output_pushpop();
-
-    // cout<<"------------------------------here is pop------------------------------:"<<endl;
-    // print_data();
-    // cout<<"-----------------------------------pop end------------------------------"<<endl;
     
 }
 
@@ -1481,4 +1417,35 @@ bool is_schedule_valid()
                  rec_equal_test_withtime) )
         return 1;
     return 0;
+}
+
+// 左上角更新算法
+void conner2as_lt(const conner & lt_conner)
+{
+    set<Vline>::iterator ivl_begin = g_s_vline.end();
+    set<Vline>::iterator ihl_end = g_s_hline.end();
+    
+    ivl_begin = g_s_vline.upper_bound(lt_conner.vl);
+    ihl_end = g_s_vline.find(lt_conner.hl);
+
+    for (set<Vline>::iterator it = ivl_begin; it!=g_s_vline.end(); it++)
+    {
+        // 右边界
+        if (it->line_type==LEFT_LINE &&  it->pt_bottle.y < lt_conner.pt.x )
+        {
+            for (set<Hline>::reverse_iterator ith = ihl_end+1;
+                 ith != g_s_hline.rend(); ++ith)
+            {
+                if (ith->get_y() >= it->pt_top.y && ith->pt_left.x < it->get_x() )
+                    break;
+                // 满足下边界
+                if (ith->get_y() < it->pt_top.y && ith_.pt_left.x < it->get_x())
+                {
+                    action_space as(point(lt_conner.pt.x, ith->get_y() ),
+                                    it->get_x()-lt_conner.pt.x, lt_conner.pt.y - ith->get_y());
+                    g_s_as.insert(as);
+                }
+            }
+        }
+    }
 }

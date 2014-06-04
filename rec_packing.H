@@ -88,7 +88,7 @@ public:
         else
             return 0;
     }
-    bool operator==(const point & _pt)
+    bool operator==(const point & _pt) const
     {
         if (x == _pt.x && y == _pt.y)
             return 1;
@@ -114,9 +114,33 @@ public:
 
     // y坐标
     int get_y() const{return pt_left.y;}
-    
-    bool operator<  ( const Hline & hline1)  const
-        {return get_y() < hline1.get_y() ? 1: 0 ;}
+
+    bool operator== (const Hline & _hline) const
+    {
+        if (pt_left == _hline.pt_left && pt_right == _hline.pt_right)
+            return 1;
+        return 0;
+    }
+    bool operator<  ( const Hline & _hline)  const
+     {
+         if (get_y() < _hline.get_y() )
+             return 1;
+         else if (get_y() == _hline.get_y())
+         {
+             if (pt_left < _hline.pt_left)
+                 return 1;
+             else if (pt_left == _hline.pt_left)
+             {
+                 if (pt_right < _hline.pt_right)
+                     return 1;
+                 return 0;
+             }
+             else
+                 return 0;
+         }
+         else
+             return 0;
+     }
     bool operator>   ( const Hline & hline1) const
     {return get_y() > hline1.get_y() ? 1: 0 ;}
 
@@ -169,11 +193,35 @@ public:
 
     // x坐标
     int get_x() const {return pt_top.x;}
-    
+
+    bool operator==(const Vline & _vline) const
+    {
+        if (pt_top == _vline.pt_top && pt_bottle == _vline.pt_bottle)
+            return 1;
+        return 0;
+    }
     bool operator< ( const Vline & _vline) const
-        {return get_x() < _vline.get_x() ? 1: 0 ;}
-    bool operator> ( const Vline & _vline)  const
-        {return get_x() > _vline.get_x() ? 1: 0 ;}
+     {
+         if (get_x() < _vline.get_x() )
+             return 1;
+         else if (get_x() == _vline.get_x())
+         {
+             if (pt_bottle < _vline.pt_bottle)
+                 return 1;
+             else if (pt_bottle == _vline.pt_bottle)
+             {
+                 if (pt_top < _vline.pt_top)
+                     return 1;
+                 return 0;
+             }
+             else
+                 return 0;
+         }
+         else
+             return 0;
+     }
+    // bool operator> ( const Vline & _vline)  const
+    //     {return get_x() > _vline.get_x() ? 1: 0 ;}
 
     bool conflict( const Vline & _vline) const
     {

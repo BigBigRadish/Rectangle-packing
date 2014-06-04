@@ -48,7 +48,7 @@ set<conner> g_s_conner2space; // 每次新生成的角,新动作空间从这些�
 
 // 
 
-action_space g_as(conner(0,0,0),0,0);
+action_space g_as(point(0,0),0,0);
 ofstream ofile("output.txt");
 
 const int MAX = 999999;
@@ -219,8 +219,6 @@ void init()
     g_v_action_kopt.reserve(50);
     g_v_rec_undo.reserve(100);
     g_v_rec_done.reserve(100);
-    
-    
 
     init_data();
 }
@@ -231,31 +229,31 @@ void remove_conner_blocked(rectangle & rec)
     g_s_conner_blocked.clear();
     set<conner>::iterator it = g_s_conner.end();
     // 被屏蔽的角保存下来，生成角的时候用来再次屏蔽
-    if ((it = g_s_conner.find(rec.left_top()) )!= g_s_conner.end() )
+    if ((it = g_s_conner.find(conner(rec.left_top()) ))!= g_s_conner.end() )
     {
         g_s_conner_blocked.insert(*it);
         g_s_conner.erase(it);
     }
-    if ((it = g_s_conner.find(rec.right_top()) )!= g_s_conner.end() )
+    if ((it = g_s_conner.find(conner(rec.right_top())) )!= g_s_conner.end() )
     {
         g_s_conner_blocked.insert(*it);
         g_s_conner.erase(it);
     }
-    if ((it = g_s_conner.find(rec.left_bottle) )!= g_s_conner.end() )
+    if ((it = g_s_conner.find(conner(rec.left_bottle)) )!= g_s_conner.end() )
     {
         g_s_conner_blocked.insert(*it);
         g_s_conner.erase(it);
     }
-    if ((it = g_s_conner.find(rec.right_bottle()) )!= g_s_conner.end() )
+    if ((it = g_s_conner.find(conner(rec.right_bottle())) )!= g_s_conner.end() )
     {
         g_s_conner_blocked.insert(*it);
         g_s_conner.erase(it);
     }
 
-    g_s_conner2space.erase(rec.left_top());
-    g_s_conner2space.erase(rec.right_top());
-    g_s_conner2space.erase(rec.left_bottle);
-    g_s_conner2space.erase(rec.right_bottle());
+    g_s_conner2space.erase(conner(rec.left_top()));
+    g_s_conner2space.erase(conner(rec.right_top()));
+    g_s_conner2space.erase(conner(rec.left_bottle));
+    g_s_conner2space.erase(conner(rec.right_bottle()));
 }
 
 // 选择动作空间和小木块
@@ -429,7 +427,7 @@ bool  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     rectangle rec_op = *i2rec; // 当前最优的小木块
 
     // left bottle 是实角
-    if(g_s_conner.count(i2as->left_bottle))
+    if(g_s_conner.count(conner(i2as->left_bottle)))
     {
         i2rec->set_ordinate_lb(i2as->left_bottle);
         calculate_fd(i2rec,i2as,fd_max);
@@ -438,7 +436,7 @@ bool  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     }
 
     // left top 是实角
-    if (g_s_conner.count(i2as->left_top()))
+    if (g_s_conner.count(conner(i2as->left_top())))
     {
         i2rec->set_ordinate_lt(i2as->left_top() );
         calculate_fd(i2rec,i2as,fd);
@@ -451,7 +449,7 @@ bool  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     }
         
     // right bottle 是实角
-    if (g_s_conner.count(i2as->right_bottle()))
+    if (g_s_conner.count(conner(i2as->right_bottle())))
     {
         i2rec->set_ordinate_rb(i2as->right_bottle() );
         calculate_fd(i2rec,i2as,fd);
@@ -464,7 +462,7 @@ bool  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     }
 
     // right top 是 实角
-    if (g_s_conner.count(i2as->right_top()))
+    if (g_s_conner.count(conner(i2as->right_top())))
     {
         i2rec->set_ordinate_rt(i2as->right_top() );
         calculate_fd(i2rec,i2as,fd);
@@ -508,9 +506,9 @@ bool max_fd_of8values(const vector<rectangle>:: iterator & i2rec,
     // 放不下,则直接返回false
     if ( min(i2rec->width,i2rec->height) > min(i2as->width,i2as->height) 
          ||max(i2rec->width,i2rec->height)>  max(i2as->width,i2as->height) )
-        {
-            return 0;
-        }
+    {
+        return 0;
+    }
     bool finded = 0;
     finded = max_fd_of4values(i2rec , i2as, fd);
     rectangle rec_un_reverse(*i2rec);
@@ -543,8 +541,8 @@ void conner2as_lb(const conner & lb_conner)
     for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
     {
         // 寻找满足条件的y坐标的最小的
-        if (it->pt_left.x <= lb_conner.x && it->pt_right.x > lb_conner.x
-            && it->get_y() > lb_conner.y)
+        if (it->pt_left.x <= lb_conner.pt.x && it->pt_right.x > lb_conner.pt.x
+            && it->get_y() > lb_conner.pt.y)
         {
             if(as_top_y > it->get_y() )
                 as_top_y = it->get_y();
@@ -556,14 +554,14 @@ void conner2as_lb(const conner & lb_conner)
     for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
     {
         // 寻找满足条件的x坐标最小的
-        if (it->get_x() > lb_conner.x && it->pt_top.y > lb_conner.y
+        if (it->get_x() > lb_conner.pt.x && it->pt_top.y > lb_conner.pt.y
             && it->pt_bottle.y < as_top_y)
         {
             if (as_right_x > it->get_x())
                 as_right_x = it->get_x();
         }
     }
-    action_space as(lb_conner,as_right_x - lb_conner.x, as_top_y - lb_conner.y);
+    action_space as(lb_conner.pt,as_right_x - lb_conner.pt.x, as_top_y - lb_conner.pt.y);
     if (find(g_v_as.begin(), g_v_as.end(), as) == g_v_as.end())
         g_v_as.push_back(as);
     
@@ -573,8 +571,8 @@ void conner2as_lb(const conner & lb_conner)
     for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
     {
         // 寻找满足条件的x坐标最小的
-        if (it->get_x() > lb_conner.x && it->pt_bottle.y <= lb_conner.y
-            && it->pt_top.y > lb_conner.y)
+        if (it->get_x() > lb_conner.pt.x && it->pt_bottle.y <= lb_conner.pt.y
+            && it->pt_top.y > lb_conner.pt.y)
         {
             if (as_right_x > it->get_x() )
                 as_right_x = it->get_x();
@@ -584,7 +582,7 @@ void conner2as_lb(const conner & lb_conner)
     // b2 寻找右上角的y坐标
     for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
     {
-        if (it->get_y() > lb_conner.y && it->pt_right.x > lb_conner.x
+        if (it->get_y() > lb_conner.pt.y && it->pt_right.x > lb_conner.pt.x
             && it->pt_left.x < as_right_x)
         {
             if(as_top_y > it->get_y() )
@@ -592,27 +590,27 @@ void conner2as_lb(const conner & lb_conner)
         }
     }
 
-    action_space as2(lb_conner,as_right_x - lb_conner.x, as_top_y - lb_conner.y);
+    action_space as2(lb_conner.pt,as_right_x - lb_conner.pt.x, as_top_y - lb_conner.pt.y);
     
     if (find(g_v_as.begin(), g_v_as.end(), as2) == g_v_as.end())
         g_v_as.push_back(as2);
 }
 
 // 左上角算法
-void conner2as_lt(const conner & lt_conner)
-{
-    //  寻找右边界，即右下角的x坐标
-    for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
-    {
-        // 寻找满足条件的x坐标最小的
-        if (it->get_x() > lt_conner.x && it->pt_bottle.y < lt_conner.y
-            && it->pt_top.y > as_bottle_y)
-        {
-            if (as_right_x > it->get_x() )
-                as_right_x = it->get_x();
-        }
-    }
-}
+// void conner2as_lt(const conner & lt_conner)
+// {
+//     //  寻找右边界，即右下角的x坐标
+//     for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
+//     {
+//         // 寻找满足条件的x坐标最小的
+//         if (it->get_x() > lt_conner.x && it->pt_bottle.y < lt_conner.y
+//             && it->pt_top.y > as_bottle_y)
+//         {
+//             if (as_right_x > it->get_x() )
+//                 as_right_x = it->get_x();
+//         }
+//     }
+// }
 void conner2as_lt(const conner & lt_conner)
 {
     int as_bottle_y = MIN;
@@ -621,8 +619,8 @@ void conner2as_lt(const conner & lt_conner)
     for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
     {
         // 寻找满足条件的y坐标的最大的
-        if (it->get_y() < lt_conner.y && it->pt_left.x <= lt_conner.x
-            && it->pt_right.x > lt_conner.x)
+        if (it->get_y() < lt_conner.pt.y && it->pt_left.x <= lt_conner.pt.x
+            && it->pt_right.x > lt_conner.pt.x)
         {
             if (as_bottle_y < it->get_y() )
                 as_bottle_y = it->get_y();
@@ -633,7 +631,7 @@ void conner2as_lt(const conner & lt_conner)
     for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
     {
         // 寻找满足条件的x坐标最小的
-        if (it->get_x() > lt_conner.x && it->pt_bottle.y < lt_conner.y
+        if (it->get_x() > lt_conner.pt.x && it->pt_bottle.y < lt_conner.pt.y
             && it->pt_top.y > as_bottle_y)
         {
             if (as_right_x > it->get_x() )
@@ -641,8 +639,8 @@ void conner2as_lt(const conner & lt_conner)
         }
     }
 
-    action_space as(conner(lt_conner.x, as_bottle_y),as_right_x - lt_conner.x,
-                    lt_conner.y - as_bottle_y );
+    action_space as(point(lt_conner.pt.x, as_bottle_y),as_right_x - lt_conner.pt.x,
+                    lt_conner.pt.y - as_bottle_y );
     if (find(g_v_as.begin(), g_v_as.end(), as) == g_v_as.end())
         g_v_as.push_back(as);
 
@@ -652,8 +650,8 @@ void conner2as_lt(const conner & lt_conner)
     for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
     {
         // 寻找满足条件的x坐标最小的
-        if (it->get_x() > lt_conner.x && it->pt_top.y >= lt_conner.y
-            && it->pt_bottle.y < lt_conner.y )
+        if (it->get_x() > lt_conner.pt.x && it->pt_top.y >= lt_conner.pt.y
+            && it->pt_bottle.y < lt_conner.pt.y )
         {
             if (as_right_x > it->get_x() )
                 as_right_x = it->get_x();
@@ -664,15 +662,15 @@ void conner2as_lt(const conner & lt_conner)
     for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
     {
         // 寻找满足条件的y坐标的最大的
-        if (it->get_y() < lt_conner.y && it->pt_right.x > lt_conner.x
+        if (it->get_y() < lt_conner.pt.y && it->pt_right.x > lt_conner.pt.x
             && it->pt_left.x < as_right_x)
         {
             if(as_bottle_y < it->get_y() )
                 as_bottle_y = it->get_y();
         }
     }
-    action_space as2(conner(lt_conner.x, as_bottle_y),as_right_x - lt_conner.x,
-                    lt_conner.y - as_bottle_y );
+    action_space as2(point(lt_conner.pt.x, as_bottle_y),as_right_x - lt_conner.pt.x,
+                    lt_conner.pt.y - as_bottle_y );
     if (find(g_v_as.begin(), g_v_as.end(), as2) == g_v_as.end())
         g_v_as.push_back(as2);
 }
@@ -687,8 +685,8 @@ void conner2as_rt(const conner & rt_conner)
     for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
     {
         // 寻找满足条件的y坐标的最大的
-        if (it->get_y() < rt_conner.y && it->pt_left.x < rt_conner.x
-            && it->pt_right.x >= rt_conner.x)
+        if (it->get_y() < rt_conner.pt.y && it->pt_left.x < rt_conner.pt.x
+            && it->pt_right.x >= rt_conner.pt.x)
         {
             if (as_bottle_y < it->get_y() )
                 as_bottle_y = it->get_y();
@@ -698,15 +696,15 @@ void conner2as_rt(const conner & rt_conner)
     for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
     {
         // 寻找满足条件的x坐标最大的
-        if (it->get_x() < rt_conner.x && it->pt_bottle.y < rt_conner.y
+        if (it->get_x() < rt_conner.pt.x && it->pt_bottle.y < rt_conner.pt.y
             && it->pt_top.y > as_bottle_y)
         {
             if (as_left_x < it->get_x() )
                 as_left_x = it->get_x();
         }
     }
-    action_space as(conner(as_left_x, as_bottle_y),rt_conner.x - as_left_x,
-                    rt_conner.y - as_bottle_y );
+    action_space as(point(as_left_x, as_bottle_y),rt_conner.pt.x - as_left_x,
+                    rt_conner.pt.y - as_bottle_y );
     if (find(g_v_as.begin(), g_v_as.end(), as) == g_v_as.end())
         g_v_as.push_back(as);
 
@@ -716,8 +714,8 @@ void conner2as_rt(const conner & rt_conner)
     for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
     {
         // 寻找满足条件的x坐标最大的
-        if (it->get_x() < rt_conner.x && it->pt_top.y >= rt_conner.y
-            && it->pt_bottle.y < rt_conner.y )
+        if (it->get_x() < rt_conner.pt.x && it->pt_top.y >= rt_conner.pt.y
+            && it->pt_bottle.y < rt_conner.pt.y )
         {
             if (as_left_x < it->get_x() )
                 as_left_x = it->get_x();
@@ -728,15 +726,15 @@ void conner2as_rt(const conner & rt_conner)
     for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
     {
         // 寻找满足条件的y坐标的最大的
-        if (it->get_y() < rt_conner.y && it->pt_right.x > as_left_x
-            && it->pt_left.x < rt_conner.x )
+        if (it->get_y() < rt_conner.pt.y && it->pt_right.x > as_left_x
+            && it->pt_left.x < rt_conner.pt.x )
         {
             if(as_bottle_y < it->get_y() )
                 as_bottle_y = it->get_y();
         }
     }
-    action_space as2(conner(as_left_x, as_bottle_y),rt_conner.x - as_left_x,
-                    rt_conner.y - as_bottle_y );
+    action_space as2(point(as_left_x, as_bottle_y),rt_conner.pt.x - as_left_x,
+                    rt_conner.pt.y - as_bottle_y );
     if (find(g_v_as.begin(), g_v_as.end(), as2) == g_v_as.end())
         g_v_as.push_back(as2);
 }
@@ -750,8 +748,8 @@ void conner2as_rb(const conner & rb_conner)
     for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
     {
         // 寻找满足条件的y坐标的最小的
-        if (it->get_y() > rb_conner.y && it->pt_right.x >= rb_conner.x
-            && it->pt_left.x < rb_conner.x)
+        if (it->get_y() > rb_conner.pt.y && it->pt_right.x >= rb_conner.pt.x
+            && it->pt_left.x < rb_conner.pt.x)
         {
             if(as_top_y > it->get_y() )
                 as_top_y = it->get_y();
@@ -762,15 +760,15 @@ void conner2as_rb(const conner & rb_conner)
     for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
     {
         // 寻找满足条件的x坐标最大的
-        if (it->get_x() < rb_conner.x && it->pt_top.y > rb_conner.y
+        if (it->get_x() < rb_conner.pt.x && it->pt_top.y > rb_conner.pt.y
             && it->pt_bottle.y < as_top_y )
         {
             if(as_left_x < it->get_x() )
                 as_left_x = it->get_x();
         }
     }
-    action_space as( conner(as_left_x, rb_conner.y),rb_conner.x - as_left_x,
-                     as_top_y - rb_conner.y);
+    action_space as( point(as_left_x, rb_conner.pt.y),rb_conner.pt.x - as_left_x,
+                     as_top_y - rb_conner.pt.y);
     if (find(g_v_as.begin(), g_v_as.end(), as) == g_v_as.end())
         g_v_as.push_back(as);
 
@@ -780,8 +778,8 @@ void conner2as_rb(const conner & rb_conner)
     for (vector<Vline>::iterator it = g_v_vline.begin() ; it != g_v_vline.end() ; it++)
     {
         // 寻找满足条件的x坐标最大的
-        if (it->get_x() < rb_conner.x && it->pt_bottle.y <= rb_conner.y
-            && it->pt_top.y > rb_conner.y)
+        if (it->get_x() < rb_conner.pt.x && it->pt_bottle.y <= rb_conner.pt.y
+            && it->pt_top.y > rb_conner.pt.y)
         {
             if (as_left_x < it->get_x() )
                 as_left_x = it->get_x();
@@ -791,15 +789,15 @@ void conner2as_rb(const conner & rb_conner)
     for (vector<Hline>::iterator it = g_v_hline.begin() ;  it != g_v_hline.end(); ++it)
     {
         // 寻找满足条件的y坐标最小的
-        if (it->get_y() > rb_conner.y && it->pt_right.x > as_left_x
-            && it->pt_left.x < rb_conner.x )
+        if (it->get_y() > rb_conner.pt.y && it->pt_right.x > as_left_x
+            && it->pt_left.x < rb_conner.pt.x )
         {
             if (as_top_y > it->get_y() )
                 as_top_y = it->get_y();
         }
     }
-    action_space as2( conner(as_left_x, rb_conner.y),rb_conner.x - as_left_x,
-                     as_top_y - rb_conner.y);
+    action_space as2( point(as_left_x, rb_conner.pt.y),rb_conner.pt.x - as_left_x,
+                     as_top_y - rb_conner.pt.y);
     if (find(g_v_as.begin(), g_v_as.end(), as2) == g_v_as.end())
         g_v_as.push_back(as2);    
 }
@@ -971,13 +969,13 @@ void find_conflict_as(const rectangle & rec)
             // 动作空间加入冲突动作空间集合
             g_v_as_conflict.push_back(*it);
             // 动作空间的实角加入 生成动作空间的角集合中
-            if ((its = g_s_conner.find(it->left_bottle) ) != g_s_conner.end())
+            if ((its = g_s_conner.find(conner(it->left_bottle)) ) != g_s_conner.end())
                 g_s_conner2space.insert(*its);
-            if ((its = g_s_conner.find(it->left_top()) ) != g_s_conner.end())
+            if ((its = g_s_conner.find(conner(it->left_top())) ) != g_s_conner.end())
                 g_s_conner2space.insert(*its);
-            if ((its = g_s_conner.find(it->right_top()) ) != g_s_conner.end())
+            if ((its = g_s_conner.find(conner(it->right_top())) ) != g_s_conner.end())
                 g_s_conner2space.insert(*its);
-            if ((its = g_s_conner.find(it->right_bottle()) ) != g_s_conner.end())
+            if ((its = g_s_conner.find(conner(it->right_bottle())) ) != g_s_conner.end())
                 g_s_conner2space.insert(*its);
         }
         
@@ -1000,14 +998,14 @@ void update_action_space()
         }
     }
     // 清除和小矩形重叠的动作空间
-    int number = 0;
-    for (vector<action_space>::iterator it = g_v_as.begin(); it!= g_v_as.end(); ++it)
-    {
-        if (it->is_conflict == 1)
-        {
-            number++;
-        }
-    }
+    // int number = 0;
+    // for (vector<action_space>::iterator it = g_v_as.begin(); it!= g_v_as.end(); ++it)
+    // {
+    //     if (it->is_conflict == 1)
+    //     {
+    //         number++;
+    //     }
+    // }
     g_v_as.erase( remove_if(g_v_as.begin(),g_v_as.end(),is_conflicted),
                   g_v_as.end() );
 }
@@ -1130,7 +1128,6 @@ void init_data()
 
     g_v_as.push_back(g_as);
     
-//    g_backtrack_mark = 1;
     for (vector<rectangle>::iterator it = g_v_rec_undo.begin();
          it!= g_v_rec_undo.end(); ++it)
         it->left_bottle.x = it->left_bottle.y = 0;
@@ -1226,11 +1223,11 @@ void print_data()
             it->left_bottle.y<<")"<<"    "<<it->reverse_mode<<endl;
     cout<<"conner info :"<<endl;
     for (set<conner>::iterator it = g_s_conner.begin(); it != g_s_conner.end(); it++)
-        cout<<"("<<it->x<<", "<<it->y<<")"<<endl;
+        cout<<"("<<it->pt.x<<", "<<it->pt.y<<")"<<endl;
 
     cout<<"conner2space info :"<<endl;
     for (set<conner>::iterator it = g_s_conner2space.begin(); it != g_s_conner2space.end(); it++)
-        cout<<"("<<it->x<<", "<<it->y<<")"<<endl;
+        cout<<"("<<it->pt.x<<", "<<it->pt.y<<")"<<endl;
     cout<<"-----------------end---------------------------------"<<endl;
     
 }
@@ -1248,9 +1245,6 @@ void print_kopt()
         cout<<"as:"<<it->as.width<<"  "<< it->as.height<<"  ("<<it->as.left_bottle.x;
         cout<<" "<<it->as.left_bottle.y<<" )"<<endl;
     }
-    
-    
- 
 }
 
 
@@ -1360,19 +1354,19 @@ bool conner_check(const conner & cn,int conner_type)
         switch(conner_type)
         {
         case LEFT_TOP:
-            if(it->left_top() == cn)
+            if(it->left_top() == cn.pt)
                 return 0;
             break;
         case LEFT_BOTTLE:
-            if(it->left_bottle == cn)
+            if(it->left_bottle == cn.pt)
                 return 0;
             break;
         case RIGHT_TOP:
-            if (it->right_top() == cn)
+            if (it->right_top() == cn.pt)
                 return 0;
             break;
         case RIGHT_BOTTLE:
-            if (it->right_bottle() == cn)
+            if (it->right_bottle() == cn.pt)
                 return 0;
             break;
         default:cout<<"error conner check"<<endl;
@@ -1420,32 +1414,32 @@ bool is_schedule_valid()
 }
 
 // 左上角更新算法
-void conner2as_lt(const conner & lt_conner)
-{
-    set<Vline>::iterator ivl_begin = g_s_vline.end();
-    set<Vline>::iterator ihl_end = g_s_hline.end();
+// void conner2as_lt(const conner & lt_conner)
+// {
+//     set<Vline>::iterator ivl_begin = g_s_vline.end();
+//     set<Vline>::iterator ihl_end = g_s_hline.end();
     
-    ivl_begin = g_s_vline.upper_bound(lt_conner.vl);
-    ihl_end = g_s_vline.find(lt_conner.hl);
+//     ivl_begin = g_s_vline.upper_bound(lt_conner.vl);
+//     ihl_end = g_s_vline.find(lt_conner.hl);
 
-    for (set<Vline>::iterator it = ivl_begin; it!=g_s_vline.end(); it++)
-    {
-        // 右边界
-        if (it->line_type==LEFT_LINE &&  it->pt_bottle.y < lt_conner.pt.x )
-        {
-            for (set<Hline>::reverse_iterator ith = ihl_end+1;
-                 ith != g_s_hline.rend(); ++ith)
-            {
-                if (ith->get_y() >= it->pt_top.y && ith->pt_left.x < it->get_x() )
-                    break;
-                // 满足下边界
-                if (ith->get_y() < it->pt_top.y && ith_.pt_left.x < it->get_x())
-                {
-                    action_space as(point(lt_conner.pt.x, ith->get_y() ),
-                                    it->get_x()-lt_conner.pt.x, lt_conner.pt.y - ith->get_y());
-                    g_s_as.insert(as);
-                }
-            }
-        }
-    }
-}
+//     for (set<Vline>::iterator it = ivl_begin; it!=g_s_vline.end(); it++)
+//     {
+//         // 右边界
+//         if (it->line_type==LEFT_LINE &&  it->pt_bottle.y < lt_conner.pt.x )
+//         {
+//             for (set<Hline>::reverse_iterator ith = ihl_end+1;
+//                  ith != g_s_hline.rend(); ++ith)
+//             {
+//                 if (ith->get_y() >= it->pt_top.y && ith->pt_left.x < it->get_x() )
+//                     break;
+//                 // 满足下边界
+//                 if (ith->get_y() < it->pt_top.y && ith_.pt_left.x < it->get_x())
+//                 {
+//                     action_space as(point(lt_conner.pt.x, ith->get_y() ),
+//                                     it->get_x()-lt_conner.pt.x, lt_conner.pt.y - ith->get_y());
+//                     g_s_as.insert(as);
+//                 }
+//             }
+//         }
+//     }
+// }

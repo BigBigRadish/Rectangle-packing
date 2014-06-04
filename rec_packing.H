@@ -74,7 +74,7 @@ public:
         y = _pt.y;
         return *this;
     }
-    bool operator<(const point & _pt)
+    bool operator<(const point & _pt) const
     {
         if (x < _pt.x)
             return 1;
@@ -96,7 +96,110 @@ public:
     }
 };
 
+/* 水平线 */
+class Hline
+{
+public:
+    point pt_left; // 左端点
+    point pt_right; // 右端点
+    int isblock;
+    int line_type;
+    Hline():pt_left(0,0),pt_right(0,0){    }
+    Hline( point  _pt_left, point  _pt_right,  int   _line_type)
+        :pt_left(_pt_left),pt_right(_pt_right),isblock(0),line_type(_line_type){}
+    Hline(const Hline & hl):
+        pt_left(hl.pt_left),pt_right(hl.pt_right),isblock(hl.isblock),line_type(hl.line_type){}
+    // 长度
+    int get_length() const {return pt_right.x -pt_left.x   ;} 
 
+    // y坐标
+    int get_y() const{return pt_left.y;}
+    
+    bool operator<  ( const Hline & hline1)  const
+        {return get_y() < hline1.get_y() ? 1: 0 ;}
+    bool operator>   ( const Hline & hline1) const
+    {return get_y() > hline1.get_y() ? 1: 0 ;}
+
+    bool conflict( const Hline & _hline) const
+     {
+         if(get_y() != _hline.get_y())
+             return 0;
+         int max_x = max(pt_right.x,_hline.pt_right.x);
+         int min_x = min(pt_left.x,_hline.pt_left.x);
+         if(max_x - min_x < get_length() + _hline.get_length()) // 说明有重叠
+             return 1;
+         return 0;
+     }
+    bool is_lefter(const Hline & _hline)const
+    {
+        if (pt_left.x <= _hline.pt_left.x)
+            return 1;
+        return 0;
+    }
+    bool is_righter(const Hline & _hline)const
+    {
+        if (pt_right.x >= _hline.pt_right.x)
+            return 1;
+        return 0;
+    }
+};
+
+// 垂直线
+class Vline
+{
+public:
+    point pt_bottle; // 底端点
+    point pt_top; // 顶端点
+    int isblock;
+    int line_type ;
+    Vline():pt_bottle(0,0),pt_top(0,0){    }
+    Vline( point  _pt_bottle, point  _pt_top,int  _line_type)
+        :pt_bottle(_pt_bottle),pt_top(_pt_top),isblock(0),line_type(_line_type){}
+    Vline(const Vline & vl)
+        :pt_bottle(vl.pt_bottle),pt_top(vl.pt_top),isblock(vl.isblock),line_type(vl.line_type){}
+    Vline & operator=(const Vline & _vl)
+    {
+        pt_bottle = _vl.pt_bottle;
+        pt_top = _vl.pt_top;
+        isblock = _vl.isblock;
+        line_type = _vl.line_type;
+    }
+    // 长度
+    int get_length() const {return pt_top.y - pt_bottle.y;   } 
+
+    // x坐标
+    int get_x() const {return pt_top.x;}
+    
+    bool operator< ( const Vline & _vline) const
+        {return get_x() < _vline.get_x() ? 1: 0 ;}
+    bool operator> ( const Vline & _vline)  const
+        {return get_x() > _vline.get_x() ? 1: 0 ;}
+
+    bool conflict( const Vline & _vline) const
+    {
+        if(get_x() != _vline.get_x())
+            return 0;
+        int max_y = max(pt_top.y,_vline.pt_top.y);
+        int min_y = min(pt_bottle.y, _vline.pt_bottle.y);
+        if (max_y - min_y < get_length() + _vline.get_length() )
+            return 1;
+        return 0;
+    }
+
+    bool is_higher(const Vline & _vline) const
+    {
+        if (pt_top.y >= _vline.pt_top.y)
+            return 1;
+        return 0;
+    }
+
+    bool is_lower(const Vline & _vline) const
+    {
+        if (pt_bottle.y <= _vline.pt_bottle.y)
+            return 1;
+        return 0;
+    }
+};
 
 // 顶点
 class conner
@@ -106,20 +209,29 @@ public:
     bool is_valid;
     int  conner_type; //角类型
     point pt; // 角坐标
-    conner(int _x , int _y ,int _is_valid=0, int _conner_type = -1):
-        pt(_x,_y),is_balid(_is_valid),conner_type(_conner_type){}
+    Vline vl;
+    Hline hl;
+    conner(int _x , int _y ,const Vline &_vl,const Hline & _hl,
+           int _is_valid=0, int _conner_type = -1):
+        pt(_x,_y),is_valid(_is_valid),conner_type(_conner_type),
+        vl(_vl),hl(_hl){}
     conner(const conner & _cn)
-        :pt(_cn.pt),is_balid(_cn.is_valid),conner_type(_cn.conner_type){}
-
+        :pt(_cn.pt),is_valid(_cn.is_valid),conner_type(_cn.conner_type),
+         vl(_cn.vl),hl(_cn.hl){}
+    conner(const point & _pt):pt(_pt),is_valid(0),conner_type(-1){}
+    conner(int _x , int _y,int _is_valid=0, int _conner_type = -1 ):
+        pt(_x,_y),is_valid(_is_valid),conner_type(_conner_type){    }
     bool operator==(const conner & _cn)
         {
             return pt == _cn.pt;
         }
     conner & operator=(const conner & _cn)
     {
-        pt = _cn.pt
+        pt = _cn.pt;
         is_valid = _cn.is_valid;
         conner_type = _cn.conner_type;
+        vl = _cn.vl;
+        hl = _cn.hl;
         return *this;
     }
     bool operator <(const conner & _cn) const
@@ -366,101 +478,6 @@ private:
 };
 
 
-/* 水平线 */
-class Hline
-{
-public:
-    point pt_left; // 左端点
-    point pt_right; // 右端点
-    int isblock;
-    int line_type;
-    
-    Hline( point  _pt_left, point  _pt_right,  int   _line_type)
-        :pt_left(_pt_left),pt_right(_pt_right),isblock(0),line_type(_line_type)
-        {
-        }
-    Hline(const Hline & hl):
-        pt_left(hl.pt_left),pt_right(hl.pt_right),isblock(hl.isblock),line_type(hl.line_type){}
-    // 长度
-    int get_length() const {return pt_right.x -pt_left.x   ;} 
-
-    // y坐标
-    int get_y() const 
-        {
-            return pt_left.y;
-        }
-    
-        
-    bool operator<  ( const Hline & hline1)  const 
-    {
-        return get_y() < hline1.get_y() ? 1: 0 ;
-    }
-    bool operator>   ( const Hline & hline1) const
-    {
-        return get_y() > hline1.get_y() ? 1: 0 ;
-    }
-
-    bool conflict( const Hline & _hline) const
-     {
-         if(get_y() != _hline.get_y())
-             return 0;
-         int max_x = max(pt_right.x,_hline.pt_right.x);
-         int min_x = min(pt_left.x,_hline.pt_left.x);
-         if(max_x - min_x < get_length() + _hline.get_length()) // 说明有重叠
-             return 1;
-         return 0;
-     }
-};
-
-// 垂直线
-class Vline
-{
-public:
-    point pt_bottle; // 底端点
-    point pt_top; // 顶端点
-    int isblock;
-    int line_type ;
-    Vline( point  _pt_bottle, point  _pt_top,int  _line_type)
-        :pt_bottle(_pt_bottle),pt_top(_pt_top),isblock(0),line_type(_line_type){}
-    Vline(const Vline & vl)
-        :pt_bottle(vl.pt_bottle),pt_top(vl.pt_top),isblock(vl.isblock),line_type(vl.line_type){}
-    // 长度
-    int get_length() const {return pt_top.y - pt_bottle.y;   } 
-
-    // x坐标
-    int get_x() const {return pt_top.x;}
-    
-    bool operator< ( const Vline & _vline) const
-        {return get_x() < _vline.get_x() ? 1: 0 ;}
-    bool operator> ( const Vline & _vline)  const
-        {return get_x() > _vline.get_x() ? 1: 0 ;}
-
-    bool conflict( const Vline & _vline) const
-    {
-        if(get_x() != _vline.get_x())
-            return 0;
-        int max_y = max(pt_top.y,_vline.pt_top.y);
-        int min_y = min(pt_bottle.y, _vline.pt_bottle.y);
-        if (max_y - min_y < get_length() + _vline.get_length() )
-            return 1;
-        return 0;
-    }
-
-    bool is_higher(const Vline & _vline) const
-    {
-        if (pt_top.y >= _vline.pt_top.y)
-            return 1;
-        return 0;
-    }
-
-    bool is_lower(const Vline & _vline) const
-    {
-        if (pt_bottle.y <= _vline.pt_bottle.y)
-            return 1;
-        return 0;
-    }
-};
-
 
 // 占角动作优先考虑时间
 // 时间越大，越优先
@@ -470,7 +487,6 @@ public:
     fit_degree fd;
     rectangle rec;
     action_space as;
-    
     conner_action(const fit_degree & _fd,const rectangle & _rec,const action_space & _as)
         :fd(_fd),rec(_rec),as(_as){    }
     bool operator<(const conner_action & _ac)const
@@ -508,9 +524,7 @@ public:
         as = _ac.as;
         return *this;
     }
+    
 };
-
-     
-
 
 #endif

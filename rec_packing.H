@@ -286,6 +286,7 @@ public:
      {
          return pt < _cn.pt;
      }
+
 };
 
 class rectangle
@@ -444,19 +445,29 @@ public:
             else
                 return 1;
         }
+    // 判断是否两个矩形有重叠部分
+    bool is_conflict(const rectangle & rec)
+    {
+        int minx = max(left_bottle.x , rec.left_bottle.x);
+        int maxx = min(left_bottle.x+width ,
+                       rec.left_bottle.x+ rec.width );
+        int miny = max(left_bottle.y , rec.left_bottle.y);
+        int maxy = min(left_bottle.y+height ,
+                       rec.left_bottle.y + rec.height);
+        if( minx >= maxx || miny >= maxy)// not conflict
+            return 0;
+        return 1;
+    }
 };
         
 class action_space :public rectangle
 {
 public:
-    bool is_conflict; // 是否被新放入的木块重叠
-
-    action_space():rectangle(0,0){    }
+     action_space():rectangle(0,0){    }
     action_space(const point & _left_bottle, int _width=0, int _height=0):
-        rectangle(_left_bottle,_width,_height),is_conflict(0){    }
+        rectangle(_left_bottle,_width,_height){    }
     action_space(const action_space & as):
-        rectangle(as.left_bottle,as.width,as.height,as.place_type),
-        is_conflict(as.is_conflict){    }
+        rectangle(as.left_bottle,as.width,as.height,as.place_type){}
     
     action_space & operator=(const action_space & as)
         {
@@ -495,35 +506,36 @@ public:
         else
             return 0;
     }
+
 };
 
 
 // 判断两个矩形是否冲突
-class rectangle_conflict
-{
-public:
-    rectangle_conflict(const point & _left_bottle,int _width,int _height)
-        :rec_block(_left_bottle,_width,_height){    }
+// class rectangle_conflict
+// {
+// public:
+//     rectangle_conflict(const point & _left_bottle,int _width,int _height)
+//         :rec_block(_left_bottle,_width,_height){    }
     
-    // 判断动作空间 ac_space 是否和 矩形块 rec_block 有重叠
-    void operator()(action_space & ac_space)
-        {
-            int minx = max(ac_space.left_bottle.x , rec_block.left_bottle.x);
-            int maxx = min(ac_space.left_bottle.x+ac_space.width ,
-                           rec_block.left_bottle.x+ rec_block.width );
-            int miny = max(ac_space.left_bottle.y , rec_block.left_bottle.y);
-            int maxy = min(ac_space.left_bottle.y+ac_space.height ,
-                           rec_block.left_bottle.y + rec_block.height);
+//     // 判断动作空间 ac_space 是否和 矩形块 rec_block 有重叠
+//     void operator()(action_space & ac_space)
+//         {
+//             int minx = max(ac_space.left_bottle.x , rec_block.left_bottle.x);
+//             int maxx = min(ac_space.left_bottle.x+ac_space.width ,
+//                            rec_block.left_bottle.x+ rec_block.width );
+//             int miny = max(ac_space.left_bottle.y , rec_block.left_bottle.y);
+//             int maxy = min(ac_space.left_bottle.y+ac_space.height ,
+//                            rec_block.left_bottle.y + rec_block.height);
 
-            if( minx >= maxx || miny >= maxy)// not conflict
-                ac_space.is_conflict = 0;
-            else                          // action space ac_space conflict 
-                ac_space.is_conflict = 1; // with rec_block                 
-        }
-private:
-    rectangle rec_block;
+//             if( minx >= maxx || miny >= maxy)// not conflict
+//                 ac_space.is_conflict = 0;
+//             else                          // action space ac_space conflict 
+//                 ac_space.is_conflict = 1; // with rec_block                 
+//         }
+// private:
+//     rectangle rec_block;
     
-};
+// };
 
 
 

@@ -675,7 +675,7 @@ void conner2as_lt(const conner & lt_conner)
         g_v_as.push_back(as2);
 }
 
-// 右上角算法
+//右上角算法
 void conner2as_rt(const conner & rt_conner)
 {
     int as_bottle_y = MIN ;
@@ -1413,33 +1413,45 @@ bool is_schedule_valid()
     return 0;
 }
 
-// 左上角更新算法
+//左上角更新算法
 // void conner2as_lt(const conner & lt_conner)
 // {
 //     set<Vline>::iterator ivl_begin = g_s_vline.end();
-//     set<Vline>::iterator ihl_end = g_s_hline.end();
+//     set<Hline>::iterator ihl_end = g_s_hline.end();
+//     Vline vl_max;
     
 //     ivl_begin = g_s_vline.upper_bound(lt_conner.vl);
-//     ihl_end = g_s_vline.find(lt_conner.hl);
+//     ihl_end = g_s_hline.find(lt_conner.hl);
 
 //     for (set<Vline>::iterator it = ivl_begin; it!=g_s_vline.end(); it++)
 //     {
+//         if (it->is_higher(vl_max))
+//             vl_max = *it;
+//         else
+//             continue;
+
 //         // 右边界
 //         if (it->line_type==LEFT_LINE &&  it->pt_bottle.y < lt_conner.pt.x )
 //         {
-//             for (set<Hline>::reverse_iterator ith = ihl_end+1;
-//                  ith != g_s_hline.rend(); ++ith)
+//             for (set<Hline>::iterator ith = ihl_end ;
+//                  ith != --g_s_hline.begin(); ith--)
 //             {
+//                 // 水平线在垂直线上部且左端点在垂直线左边,则屏蔽此垂直线
 //                 if (ith->get_y() >= it->pt_top.y && ith->pt_left.x < it->get_x() )
 //                     break;
 //                 // 满足下边界
-//                 if (ith->get_y() < it->pt_top.y && ith_.pt_left.x < it->get_x())
+//                 if (ith->get_y() < it->pt_top.y && ith->pt_left.x < it->get_x())
 //                 {
 //                     action_space as(point(lt_conner.pt.x, ith->get_y() ),
 //                                     it->get_x()-lt_conner.pt.x, lt_conner.pt.y - ith->get_y());
-//                     g_s_as.insert(as);
+//                     if (find(g_v_as.begin(), g_v_as.end(), as) == g_v_as.end())
+//                         g_v_as.push_back(as);
+//                     break;
 //                 }
 //             }
 //         }
+//         // 如果当前最高的直线上端点y坐标大于lt_conner的y坐标，则屏蔽后面所有直线
+//         if (vl_max.pt_top.y >= lt_conner.pt.y)
+//             break;
 //     }
 // }

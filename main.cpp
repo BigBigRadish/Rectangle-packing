@@ -183,6 +183,8 @@ void chonse_biggest_time_rec(vector<rectangle>::iterator &i2rec,const rectangle 
 
 bool rec_equal_test_withtime(const rectangle &rec1, const rectangle &rec2);
 
+void vline_insert(const Vline & vl );
+void hline_insert(const Hline & hl);
 
 
 int main(int arg ,char *arv[])
@@ -221,6 +223,9 @@ void init()
     // 预分配空间
     // 否则会导致 chose_as_rec 迭代时候，迭代器失效，因为
     g_v_as.reserve(200);
+    // 预分配空间,放置迭代起失效
+    g_v_vline.reserve(1000);
+    g_v_hline.reserve(1000);
     g_v_action_kopt.reserve(50);
     g_v_rec_undo.reserve(100);
     g_v_rec_done.reserve(100);
@@ -937,10 +942,14 @@ void generate_conners(const rectangle & rec)
     Vline leftl(rec.left_bottle, rec.left_top() ,LEFT_LINE);
     Vline rightl(rec.right_bottle(), rec.right_top() ,RIGHT_LINE);
     // 矩形块的4条线加入线集合中
-    g_v_hline.push_back(upl);
-    g_v_hline.push_back(downl);
-    g_v_vline.push_back(leftl);
-    g_v_vline.push_back(rightl);
+    vline_insert(leftl);
+    vline_insert(rightl);
+    hline_insert(upl);
+    hline_insert(downl);
+    // g_v_hline.push_back(upl);
+    // g_v_hline.push_back(downl);
+    // g_v_vline.push_back(leftl);
+    // g_v_vline.push_back(rightl);
     for (vector<Vline>::iterator it = g_v_vline.begin(); it != g_v_vline.end(); ++it)
     {
         find_conner_vline2upline(*it,upl);
@@ -1421,7 +1430,9 @@ bool is_schedule_valid()
 //左上角更新算法
 // void conner2as_lt(const conner & lt_conner)
 // {
-//     set<Vline>::iterator ivl_begin = g_s_vline.end();
+//     sort(g_s_vline.begin(),g_s_vline.end());
+    
+//     vector<Vline>::iterator ivl_begin = g_s_vline.end();
 //     set<Hline>::iterator ihl_end = g_s_hline.end();
 //     Vline vl_max;
     
@@ -1460,3 +1471,28 @@ bool is_schedule_valid()
 //             break;
 //     }
 // }
+
+
+void vline_insert(const Vline & vl )
+{
+    // g_v_vline 已经有序
+    vector<Vline>::iterator ilocv = upper_bound(g_v_vline.begin(),
+                                               g_v_vline.end(),vl);
+    g_v_vline.push_back(vl);
+    vector<Vline>::iterator it = g_v_vline.end()-1;
+    for (it; it!= ilocv; --it)
+        *it = *(it-1);
+    *it = vl;
+}
+
+void hline_insert(const Hline & hl)
+{
+    // g_v_hline 已经有序
+    vector<Hline>::iterator iloch = upper_bound(g_v_hline.begin(),
+                                               g_v_hline.end(),hl);
+    g_v_hline.push_back(hl);
+    vector<Hline>::iterator ith = g_v_hline.end()-1;
+    for (ith; ith!= iloch; --ith)
+        *ith = *(ith-1);
+    *ith = hl;
+}

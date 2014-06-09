@@ -11,6 +11,7 @@
 #include "rec_packing.H"
 #include <string>
 #include <stack>
+#include <ctime>
 
 using namespace std;
 
@@ -186,8 +187,12 @@ bool rec_equal_test_withtime(const rectangle &rec1, const rectangle &rec2);
 
 int main(int arg ,char *arv[])
 {
+    clock_t start = clock();
     init();
     task_scheduling();
+    clock_t end = clock();
+    double duration =(double)(end-start)/CLOCKS_PER_SEC;
+    cout<<duration<<endl;
 }
 
 void init()

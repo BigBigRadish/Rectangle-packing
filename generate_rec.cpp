@@ -181,7 +181,7 @@ void output_data()
 {
     
     ofstream ofile("data.txt");
-    ofile<<g_width<<" "<<g_height<<" "<<g_opt_time<<" "<<endl;
+    ofile<<g_width<<" "<<g_height<<endl;
     ofile<<g_rec.size()<<endl;
     for (vector<rectangle>::iterator it = g_rec.begin(); it != g_rec.end(); ++it)
         ofile<<it->width<<" "<<it->height<<" "<<it->time<<endl;

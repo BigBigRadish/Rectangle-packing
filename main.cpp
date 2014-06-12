@@ -327,8 +327,8 @@ int calculate_fd_s(vector<rectangle>::iterator i2rec,
     remove_conner_blocked(rec_chonse);
     generate_conners(*i2rec);
     update_action_space();
-    g_v_rec_done.push_back(*i2rec);
-    g_v_rec_undo.erase(i2rec);
+//    g_v_rec_done.push_back(*i2rec);
+//    g_v_rec_undo.erase(i2rec);
     int s = g_v_as.size();
     // restore
     data_pop();
@@ -619,8 +619,10 @@ void find_conner_hline2rightline(const Hline & hline, const Vline & right_line)
         {
             if (conner_check(conner(right_line.get_x(), hline.get_y(),1,LEFT_BOTTLE ),LEFT_BOTTLE))
             {
-                g_s_conner.insert(conner(right_line.get_x(), hline.get_y(),right_line,hline,1,LEFT_BOTTLE ));
-                g_s_conner2space.insert(conner(right_line.get_x(), hline.get_y(),right_line,hline,1,LEFT_BOTTLE ));                
+                g_s_conner.insert(
+                    conner(right_line.get_x(), hline.get_y(),right_line,hline,1,LEFT_BOTTLE ));
+                g_s_conner2space.insert(
+                    conner(right_line.get_x(), hline.get_y(),right_line,hline,1,LEFT_BOTTLE ));
             }
 
         }
@@ -630,8 +632,10 @@ void find_conner_hline2rightline(const Hline & hline, const Vline & right_line)
         {
             if (conner_check(conner(right_line.get_x(), hline.get_y(),1,LEFT_TOP ), LEFT_TOP))
             {
-                g_s_conner.insert(conner(right_line.get_x(), hline.get_y(),right_line,hline,1,LEFT_TOP ));
-                g_s_conner2space.insert(conner(right_line.get_x(), hline.get_y(),right_line,hline,1,LEFT_TOP ));
+                g_s_conner.insert(
+                    conner(right_line.get_x(), hline.get_y(),right_line,hline,1,LEFT_TOP ));
+                g_s_conner2space.insert(
+                    conner(right_line.get_x(), hline.get_y(),right_line,hline,1,LEFT_TOP ));
             }
         }
     }
@@ -649,10 +653,6 @@ void generate_conners(const rectangle & rec)
     vline_insert(rightl);
     hline_insert(upl);
     hline_insert(downl);
-    // g_v_hline.push_back(upl);
-    // g_v_hline.push_back(downl);
-    // g_v_vline.push_back(leftl);
-    // g_v_vline.push_back(rightl);
     for (vector<Vline>::iterator it = g_v_vline.begin(); it != g_v_vline.end(); ++it)
     {
         find_conner_vline2upline(*it,upl);
@@ -664,9 +664,7 @@ void generate_conners(const rectangle & rec)
         find_conner_hline2leftline(*it,leftl);
         find_conner_hline2rightline(*it,rightl);
     }
-    
 }
-
 
 // 寻找被矩形块 i2chonse_rec冲突的动作空间
 // 并且把这几个动作空间的实角添加到 生成动作空间的角集合中
@@ -695,7 +693,6 @@ void find_conflict_as(const rectangle & rec)
             if ((its = g_s_conner.find(conner(it->right_bottle())) ) != g_s_conner.end())
                 g_s_conner2space.insert(*its);
         }
-        
     }
 }
 
@@ -713,7 +710,7 @@ void update_action_space()
         case RIGHT_TOP:   conner2as_rt(*it);break;
         }
     }
-
+    // 去除受和放入矩形块冲突的动作空间
     g_v_as.erase( remove_if(g_v_as.begin(),g_v_as.end(),is_conflicted),
                   g_v_as.end() );
 }
@@ -849,10 +846,14 @@ void init_data()
     Vline right_line(g_as.right_bottle(),g_as.right_top(), LEFT_LINE);
     
 
-    g_s_conner.insert(conner(g_as.left_bottle.x,g_as.left_bottle.y,left_line,down_line,1,LEFT_BOTTLE) );
-    g_s_conner.insert(conner(g_as.left_top().x,g_as.left_top().y,left_line,up_line,1,LEFT_TOP ));
-    g_s_conner.insert(conner(g_as.right_top().x,g_as.right_top().y,right_line,up_line,1,RIGHT_TOP ));
-    g_s_conner.insert(conner(g_as.right_bottle().x,g_as.right_bottle().y,right_line,down_line,1,RIGHT_BOTTLE ));
+    g_s_conner.insert(
+        conner(g_as.left_bottle.x,g_as.left_bottle.y,left_line,down_line,1,LEFT_BOTTLE) );
+    g_s_conner.insert(
+        conner(g_as.left_top().x,g_as.left_top().y,left_line,up_line,1,LEFT_TOP ));
+    g_s_conner.insert(
+        conner(g_as.right_top().x,g_as.right_top().y,right_line,up_line,1,RIGHT_TOP ));
+    g_s_conner.insert(
+        conner(g_as.right_bottle().x,g_as.right_bottle().y,right_line,down_line,1,RIGHT_BOTTLE ));
 
     // 初始化线
     g_v_hline.clear();
@@ -861,11 +862,6 @@ void init_data()
     hline_insert(up_line);
     vline_insert(left_line);
     vline_insert(right_line);
-    
-    // g_v_hline.push_back(Hline(g_as.left_top(),g_as.right_top(),DOWN_LINE));
-    // g_v_hline.push_back(Hline(g_as.left_bottle,g_as.right_bottle(),UP_LINE));
-    // g_v_vline.push_back(Vline(g_as.left_bottle,g_as.left_top(),RIGHT_LINE));
-    // g_v_vline.push_back(Vline(g_as.right_bottle(),g_as.right_top(), LEFT_LINE));
 }
 
 bool time_comp(const rectangle & rec1,const rectangle & rec2)
@@ -987,12 +983,10 @@ int backtrack2()
     action_space as;
     conner_action ac(fd,rec,as);
     
-    
     if(chose_as_rec())
     {
         // 反向排序，这样g_v_action中数据按从大到小排序
         sort(g_v_action_kopt.rbegin(),g_v_action_kopt.rend());
-        
         max_area = 0;
         for (vector<conner_action>::iterator
                  it = g_v_action_kopt.begin();
@@ -1009,9 +1003,7 @@ int backtrack2()
             update_data(i2chonse_rec,i2chonse_as);
             area = backtrack2();
             if(area == g_as.get_area() || g_v_rec_undo.size()==0)
-            {
                 return area;
-            }
             data_pop();
             if(max_area < area)
             {
@@ -1019,21 +1011,10 @@ int backtrack2()
                 ac = *it;
             }
         }
-
-        // if (max_area == g_as.get_area())
-        //     break;
-        
-        // chonse_biggest_time_rec(i2chonse_rec,ac.rec);
-        
-        // i2chonse_as = find(g_v_as.begin(),g_v_as.end(),ac.as);
-
-        // update_data(i2chonse_rec,i2chonse_as);
     }
     area = get_area();
     return area;
 }
-
-
 
 void data_push()
 {
@@ -1070,9 +1051,6 @@ void data_pop()
     g_stk_v4kopt.pop();
     
 }
-
-
-
 
 bool conner_check(const conner & cn,int conner_type)
 {

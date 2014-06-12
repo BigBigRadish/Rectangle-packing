@@ -25,10 +25,11 @@ stack< vector<rectangle> > g_stk_v4rec_done;
 stack< vector<action_space> > g_stk_v4as;
 stack< set<conner> > g_stk_s4conner;
 stack< vector<conner_action> > g_stk_v4kopt;
+stack< vector<rectangle> > g_stk_v4rec_last;
 
 // 前k个最优的占角动作
 vector<conner_action> g_v_action_kopt;
-int  g_optnumber = 3;
+int  g_optnumber = 5;
 
 vector<Hline> g_v_hline; // 所有水平线
 vector<Vline> g_v_vline ; // 所有垂直线
@@ -193,7 +194,7 @@ int main(int arg ,char *arv[])
     task_scheduling();
     clock_t end = clock();
     double duration =(double)(end-start)/CLOCKS_PER_SEC;
-    cout<<duration<<endl;
+    cout<<duration<<"s"<<endl;
 }
 
 void init()
@@ -228,7 +229,8 @@ void init()
     g_v_action_kopt.reserve(50);
     g_v_rec_undo.reserve(100);
     g_v_rec_done.reserve(100);
-
+    g_v_rec_last_unfinished.reserve(100);
+    
     init_data();
 }
 
@@ -275,23 +277,46 @@ bool chose_as_rec()
     vector<action_space>::iterator i2as = g_v_as.begin();
     fit_degree fd;
     bool finded = 0;
-    
-    for (i2as= g_v_as.begin(); i2as!= g_v_as.end() ; i2as++) // 迭代动作空间
+    if (!g_v_rec_last_unfinished.empty())
     {
-        for (i2rec=g_v_rec_undo.begin(); i2rec != g_v_rec_undo.end() ; ++i2rec) // 迭代外部矩形块
+        for (i2as= g_v_as.begin(); i2as!= g_v_as.end() ; i2as++) // 迭代动作空间
         {
-            if(!max_fd_of8values(i2rec,i2as,fd))
-                continue;
-            finded = 1;;
-            // 
-            if (backtrack_mark == 1)
+            for (i2rec=g_v_rec_last_unfinished.begin();
+                 i2rec != g_v_rec_last_unfinished.end() ; ++i2rec) // 迭代外部矩形块
             {
-                g_v_action_kopt.clear();
-                backtrack_mark = 0;
+                if(!max_fd_of8values(i2rec,i2as,fd))
+                    continue;
+                finded = 1;;
+                // 
+                if (backtrack_mark == 1)
+                {
+                    g_v_action_kopt.clear();
+                    backtrack_mark = 0;
+                }
+                update_kopt(fd,*i2rec,*i2as) ;
             }
-            update_kopt(fd,*i2rec,*i2as) ;
         }
     }
+    else
+    {
+        for (i2as= g_v_as.begin(); i2as!= g_v_as.end() ; i2as++) // 迭代动作空间
+        {
+            for (i2rec=g_v_rec_undo.begin(); i2rec != g_v_rec_undo.end() ; ++i2rec) // 迭代外部矩形块
+            {
+                if(!max_fd_of8values(i2rec,i2as,fd))
+                    continue;
+                finded = 1;;
+                // 
+                if (backtrack_mark == 1)
+                {
+                    g_v_action_kopt.clear();
+                    backtrack_mark = 0;
+                }
+                update_kopt(fd,*i2rec,*i2as) ;
+            }
+        }
+    }
+    
     return finded ;
 }
 
@@ -779,7 +804,12 @@ void update_data(vector<rectangle>::iterator  i2chonse_rec,
     generate_conners(*i2chonse_rec);
     update_action_space();
     g_v_rec_done.push_back(*i2chonse_rec);
-    g_v_rec_undo.erase(i2chonse_rec);
+    if (!g_v_rec_last_unfinished.empty())
+        g_v_rec_last_unfinished.erase(i2chonse_rec);
+    else
+        g_v_rec_undo.erase(i2chonse_rec);
+
+
 }
 
 
@@ -792,17 +822,31 @@ void task_scheduling()
     int time_total = 0; // 记录总体加工时间
     int time_this = 0; // 记录本次调度加工时间
     int number = 0;
-    while(g_v_rec_undo.size()!=0)
+    int area = 0;
+    int last_unfinished_mark =0;
+    while(g_v_rec_undo.size()!=0 || g_v_rec_last_unfinished.size()!=0)
     {
         // 用回溯法完成一次调度
-        backtrack2();
+        if (g_v_rec_last_unfinished.size()!=0)
+            last_unfinished_mark = 1;
+        else
+            last_unfinished_mark = 0;
+        area = backtrack2();
+        // 如果本此调度的举行块含有上次未完成的，并且本次没有占满矩形框
+        // 重新进行一次调度，因为调度的时候是优先调度了上次未完成的矩形块
+        // 再次调度则将本次调度进来的同等考虑（已经包含了所有上次未完成的矩形块）
+        if (area != g_as.get_area() && last_unfinished_mark == 1)
+        {
+            g_v_rec_last_unfinished = g_v_rec_done;
+            init_data();
+            area = backtrack2();
+        }
         time_this = update_rec_status();
         number++;
         time_total += time_this;
         print_schedule(time_total,number);
         output_data(number,time_total);
         cout<<g_v_rec_done.size()<<endl;
-        
         init_data();
      }
 }
@@ -824,6 +868,8 @@ void init_data()
         g_stk_s4conner.pop();
     while(!g_stk_v4kopt.empty())
         g_stk_v4kopt.pop();
+    while(!g_stk_v4rec_last.empty())
+        g_stk_v4rec_last.pop();
     
     g_v_as.clear();
     g_v_as_conflict.clear();
@@ -899,11 +945,10 @@ int update_rec_status()
         itr->time  -= min_time;
         if (itr->time == 0) // 加工完毕的话，添加到调度完成集合
             g_v_rec_scheduled.push_back(*itr);
-        if (itr->time != 0) // 加工未完成，重新添加到待处理集合
+        else // 加工未完成，重新添加到待处理集合
         {
-            g_v_rec_undo.push_back(*itr);
             g_v_rec_last_unfinished.push_back(*itr);
-        }
+         }
     }
     return min_time;
 }
@@ -983,7 +1028,8 @@ int backtrack2()
     action_space as;
     conner_action ac(fd,rec,as);
     
-    if(chose_as_rec())
+    
+    while(chose_as_rec())
     {
         // 反向排序，这样g_v_action中数据按从大到小排序
         sort(g_v_action_kopt.rbegin(),g_v_action_kopt.rend());
@@ -997,7 +1043,6 @@ int backtrack2()
             if(i2chonse_rec == g_v_rec_undo.end())
                 cout<<"not find"<<endl;
             *i2chonse_rec = it->rec;
-            
             i2chonse_as = find(g_v_as.begin(),g_v_as.end(),it->as);
             data_push();
             update_data(i2chonse_rec,i2chonse_as);
@@ -1011,6 +1056,11 @@ int backtrack2()
                 ac = *it;
             }
         }
+        if (max_area == g_as.get_area())
+            break;
+        chonse_biggest_time_rec(i2chonse_rec,ac.rec);
+        i2chonse_as = find(g_v_as.begin(),g_v_as.end(),ac.as);
+        update_data(i2chonse_rec,i2chonse_as);
     }
     area = get_area();
     return area;
@@ -1022,9 +1072,11 @@ void data_push()
     g_stk_v4vl.push( g_v_vline);
     g_stk_v4rec_undo.push( g_v_rec_undo);
     g_stk_v4rec_done.push( g_v_rec_done);
+    g_stk_v4rec_last.push(g_v_rec_last_unfinished);
     g_stk_v4as.push(g_v_as);
     g_stk_s4conner.push( g_s_conner);
     g_stk_v4kopt.push( g_v_action_kopt);
+    
 }
 
 void data_pop()
@@ -1041,6 +1093,9 @@ void data_pop()
     g_v_rec_done = g_stk_v4rec_done.top();
     g_stk_v4rec_done.pop();
 
+    g_v_rec_last_unfinished = g_stk_v4rec_last.top();
+    g_stk_v4rec_last.pop();
+    
     g_v_as = g_stk_v4as.top();
     g_stk_v4as.pop();
 
@@ -1088,14 +1143,30 @@ void chonse_biggest_time_rec(vector<rectangle>::iterator &i2rec,const rectangle 
 {
     int time = 0;
     i2rec = g_v_rec_undo.end();
-    for (vector<rectangle>::iterator it = g_v_rec_undo.begin(); it != g_v_rec_undo.end(); it++)
+    if (!g_v_rec_last_unfinished.empty())
     {
-        if (*it == rec && it->time > time)
+        for (vector<rectangle>::iterator it = g_v_rec_last_unfinished.begin();
+             it != g_v_rec_last_unfinished.end(); it++)
         {
-            i2rec = it;
-            time = it->time;
+            if (*it == rec && it->time > time)
+            {
+                i2rec = it;
+                time = it->time;
+            }
         }
     }
+    else
+    {
+        for (vector<rectangle>::iterator it = g_v_rec_undo.begin(); it != g_v_rec_undo.end(); it++)
+        {
+            if (*it == rec && it->time > time)
+            {
+                i2rec = it;
+                time = it->time;
+            }
+        }
+    }
+    
 }
 
 bool rec_equal_test_withtime(const rectangle &rec1, const rectangle &rec2)

@@ -28,7 +28,7 @@ stack< vector<conner_action> > g_stk_v4kopt;
 
 // 前k个最优的占角动作
 vector<conner_action> g_v_action_kopt;
-int  g_optnumber = 5;
+int  g_optnumber = 3;
 
 vector<Hline> g_v_hline; // 所有水平线
 vector<Vline> g_v_vline ; // 所有垂直线
@@ -61,8 +61,7 @@ void print_status_task();
 
 
 // 选择当前最优的放置
-bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
-                  vector<action_space>::iterator & i2chonse_as);
+bool chose_as_rec();
 
 // 更新动作空间
 void update_action_space(vector<rectangle>::iterator i2chonse_rec,
@@ -267,19 +266,14 @@ void remove_conner_blocked(rectangle & rec)
 }
 
 // 选择动作空间和小木块
-bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
-                  vector<action_space>::iterator & i2chonse_as)
+bool chose_as_rec()
 {
     int backtrack_mark = 1;
     if (g_v_rec_undo.size() == 0)
         return false;
-    
     vector<rectangle>::iterator i2rec = g_v_rec_undo.begin();
     vector<action_space>::iterator i2as = g_v_as.begin();
-
-    rectangle rec_chosen = g_v_rec_undo[0];
     fit_degree fd;
-    fit_degree max_fd ;
     bool finded = 0;
     
     for (i2as= g_v_as.begin(); i2as!= g_v_as.end() ; i2as++) // 迭代动作空间
@@ -295,31 +289,9 @@ bool chose_as_rec(vector<rectangle>::iterator & i2chonse_rec,
                 g_v_action_kopt.clear();
                 backtrack_mark = 0;
             }
-            
             update_kopt(fd,*i2rec,*i2as) ;
-            
-            if(max_fd < fd || (fd == max_fd && *i2rec > rec_chosen) )
-            {
-                rec_chosen = *i2rec ;  // 由于小方块在迭代过程中会被改变，所以保存当前最优解的值
-                                        // 坐标，放置方式等会改变
-                i2chonse_rec = i2rec; // 指向当前最优解的那个小方块
-                i2chonse_as = i2as ;
-                max_fd = fd;
-            }
         }
     }
-    // if (finded)
-    // {
-    //     if (*i2chonse_rec != rec_chosen)
-    //     {
-    //         cout<<"not equal"<<endl;
-    //         cout<<i2chonse_rec->id<<endl;
-    //         cout<<rec_chosen.id<<endl;
-    //         exit(1);
-    //     }
-    //     *i2chonse_rec  = rec_chosen ; // 将最优解的那个小方块设置为其最优值
-    //     i2chonse_as->place_type = i2chonse_rec->place_type;
-    // }
     return finded ;
 }
 
@@ -346,7 +318,6 @@ int calculate_fd_s(vector<rectangle>::iterator i2rec,
 {
     rectangle rec_chonse;
     action_space as_chonse;
-//    print_data();
     // backup
     data_push();
     
@@ -359,7 +330,6 @@ int calculate_fd_s(vector<rectangle>::iterator i2rec,
     g_v_rec_done.push_back(*i2rec);
     g_v_rec_undo.erase(i2rec);
     int s = g_v_as.size();
-//    print_data();
     // restore
     data_pop();
     return 0-s;
@@ -504,7 +474,6 @@ bool  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     case RIGHT_TOP:
         i2rec->set_ordinate_rt(i2as->right_top() );break;
     default:
-        
         cout<<"error";
         cout<<"rec:"<<i2rec->width<<" "<<i2rec->height;
         cout<<"  (:"<<i2rec->left_bottle.x<<" "<<i2rec->left_bottle.y<<" )";
@@ -733,8 +702,6 @@ void find_conflict_as(const rectangle & rec)
 void update_action_space()
 {
     // 由角生成动作空间
-//    print_data();
-    
     for (set<conner>::iterator it = g_s_conner2space.begin();
          it != g_s_conner2space.end()   ; ++it)
     {
@@ -746,18 +713,9 @@ void update_action_space()
         case RIGHT_TOP:   conner2as_rt(*it);break;
         }
     }
-    // 清除和小矩形重叠的动作空间
-    // int number = 0;
-    // for (vector<action_space>::iterator it = g_v_as.begin(); it!= g_v_as.end(); ++it)
-    // {
-    //     if (it->is_conflict == 1)
-    //     {
-    //         number++;
-    //     }
-    // }
+
     g_v_as.erase( remove_if(g_v_as.begin(),g_v_as.end(),is_conflicted),
                   g_v_as.end() );
-//    print_data();
 }
 
 // 输出最后数据
@@ -847,7 +805,6 @@ void task_scheduling()
         print_schedule(time_total,number);
         output_data(number,time_total);
         cout<<g_v_rec_done.size()<<endl;
-//        print_data();
         
         init_data();
      }
@@ -1031,7 +988,7 @@ int backtrack2()
     conner_action ac(fd,rec,as);
     
     
-    while(chose_as_rec(i2chonse_rec,i2chonse_as))
+    if(chose_as_rec())
     {
         // 反向排序，这样g_v_action中数据按从大到小排序
         sort(g_v_action_kopt.rbegin(),g_v_action_kopt.rend());
@@ -1063,14 +1020,14 @@ int backtrack2()
             }
         }
 
-        if (max_area == g_as.get_area())
-            break;
+        // if (max_area == g_as.get_area())
+        //     break;
         
-        chonse_biggest_time_rec(i2chonse_rec,ac.rec);
+        // chonse_biggest_time_rec(i2chonse_rec,ac.rec);
         
-        i2chonse_as = find(g_v_as.begin(),g_v_as.end(),ac.as);
+        // i2chonse_as = find(g_v_as.begin(),g_v_as.end(),ac.as);
 
-        update_data(i2chonse_rec,i2chonse_as);
+        // update_data(i2chonse_rec,i2chonse_as);
     }
     area = get_area();
     return area;

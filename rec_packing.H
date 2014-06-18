@@ -125,21 +125,7 @@ public:
      {
          if (get_y() < _hline.get_y() )
              return 1;
-         else if (get_y() == _hline.get_y())
-         {
-             if (pt_left < _hline.pt_left)
-                 return 1;
-             else if (pt_left == _hline.pt_left)
-             {
-                 if (pt_right < _hline.pt_right)
-                     return 1;
-                 return 0;
-             }
-             else
-                 return 0;
-         }
-         else
-             return 0;
+         return 0;
      }
     bool operator>   ( const Hline & hline1) const
     {return get_y() > hline1.get_y() ? 1: 0 ;}
@@ -204,21 +190,7 @@ public:
      {
          if (get_x() < _vline.get_x() )
              return 1;
-         else if (get_x() == _vline.get_x())
-         {
-             if (pt_bottle < _vline.pt_bottle)
-                 return 1;
-             else if (pt_bottle == _vline.pt_bottle)
-             {
-                 if (pt_top < _vline.pt_top)
-                     return 1;
-                 return 0;
-             }
-             else
-                 return 0;
-         }
-         else
-             return 0;
+         return 0;
      }
     // bool operator> ( const Vline & _vline)  const
     //     {return get_x() > _vline.get_x() ? 1: 0 ;}
@@ -271,7 +243,7 @@ public:
         pt(_x,_y),is_valid(_is_valid),conner_type(_conner_type){    }
     bool operator==(const conner & _cn)
         {
-            return pt == _cn.pt;
+            return pt == _cn.pt ;
         }
     conner & operator=(const conner & _cn)
     {
@@ -284,7 +256,13 @@ public:
     }
     bool operator <(const conner & _cn) const
      {
-         return pt < _cn.pt;
+         return pt < _cn.pt ;
+         // if (pt< _cn.pt)
+         //     return 1;
+         // else if (pt == _cn.pt)
+         //     return conner_type < _cn.conner_type;
+         // else
+         //     return 0;
      }
 };
 
@@ -466,7 +444,7 @@ public:
             place_type = as.place_type;
         }
     
-    bool operator==(const action_space & _as)
+    bool operator==(const action_space & _as) const
         {
             if (left_bottle == _as.left_bottle &&
                 width == _as.width &&  height == _as.height)
@@ -474,7 +452,7 @@ public:
             else
                 return 0;
         }
-    bool operator<(const action_space & _as)
+    bool operator<(const action_space & _as) const
     {
         if(left_bottle < _as.left_bottle )
             return 1;
@@ -533,21 +511,21 @@ class conner_action
 {
 public:
     fit_degree fd;
-    rectangle rec;
-    action_space as;
-    conner_action(const fit_degree & _fd,const rectangle & _rec,const action_space & _as)
-        :fd(_fd),rec(_rec),as(_as){    }
+    vector<rectangle>::iterator irec;
+    vector<action_space>::iterator ias;
+    conner_action(const fit_degree & _fd,vector<rectangle>::iterator _irec,vector<action_space>::iterator  _ias)
+        :fd(_fd),irec(_irec),ias(_ias){    }
     bool operator<(const conner_action & _ac)const
         {
-            if (rec.time < _ac.rec.time)
+            if (irec->time < _ac.irec->time)
                 return 1;
-            else if (rec.time == _ac.rec.time)
+            else if (irec->time == _ac.irec->time)
             {
                 if (fd < _ac.fd)
                     return 1;
                 else if (fd == _ac.fd)
                 {
-                    if (rec < _ac.rec)
+                    if (*irec < *(_ac.irec))
                         return 1;
                     else
                         return 0 ;
@@ -560,7 +538,7 @@ public:
         }
     bool operator ==(const conner_action &_ac)
         {
-            if (fd == _ac.fd && rec.is_equal_withtime(_ac.rec)  && as == _ac.as)
+            if (fd == _ac.fd && irec->is_equal_withtime(*(_ac.irec))  && *ias == *(_ac.ias))
                 return 1;
             else
                 return 0;
@@ -568,8 +546,8 @@ public:
     conner_action & operator=(const conner_action & _ac)
     {
         fd = _ac.fd;
-        rec = _ac.rec;
-        as = _ac.as;
+        irec = _ac.irec;
+        ias = _ac.ias;
         return *this;
     }
     

@@ -12,6 +12,7 @@
 #include <string>
 #include <stack>
 #include <ctime>
+#include <utility>
 
 using namespace std;
 
@@ -138,8 +139,8 @@ void update_action_space();
 
     
 void update_kopt( const fit_degree & fd,
-                  const rectangle & rec,
-                  const action_space & as);
+                  vector<rectangle>::iterator  irec,
+                  vector<action_space>::iterator  ias);
 
 int get_area();
 
@@ -293,7 +294,7 @@ bool chose_as_rec()
                     g_v_action_kopt.clear();
                     backtrack_mark = 0;
                 }
-                update_kopt(fd,*i2rec,*i2as) ;
+                update_kopt(fd,i2rec,i2as) ;
             }
         }
     }
@@ -312,7 +313,7 @@ bool chose_as_rec()
                     g_v_action_kopt.clear();
                     backtrack_mark = 0;
                 }
-                update_kopt(fd,*i2rec,*i2as) ;
+                update_kopt(fd,i2rec,i2as) ;
             }
         }
     }
@@ -764,24 +765,24 @@ bool is_conflicted(const action_space& as)
 
 
 void update_kopt( const fit_degree & fd,
-                  const rectangle & rec,
-                  const action_space & as)
+                  vector<rectangle>::iterator irec,
+                  vector<action_space>::iterator  ias)
 {
     vector<conner_action>::iterator it = g_v_action_kopt.end();
 
     // 如果已经存在一样的占角，则不添加
     it = find(g_v_action_kopt.begin(),g_v_action_kopt.end(),
-              conner_action(fd,rec,as)) ;
+              conner_action(fd,irec,ias)) ;
     if (it != g_v_action_kopt.end())
         return ;
     
-    if (g_v_action_kopt.size() <= g_optnumber)
-        g_v_action_kopt.push_back(conner_action(fd,rec,as));
+    if (g_v_action_kopt.size() < g_optnumber)
+        g_v_action_kopt.push_back(conner_action(fd,irec,ias));
     else
     {
         it = min_element(g_v_action_kopt.begin(),g_v_action_kopt.end());
-        if (*it < conner_action(fd,rec,as))
-            *it = conner_action(fd,rec,as);
+        if (*it < conner_action(fd,irec,ias))
+            *it = conner_action(fd,irec,ias);
     }
 }
 
@@ -1009,10 +1010,10 @@ void print_kopt()
     for (it =g_v_action_kopt.begin();
          it != g_v_action_kopt.end();it++)
     {
-        cout<<"rec:"<<it->rec.width<<"  "<< it->rec.height<<"  ("<<it->rec.left_bottle.x;
-        cout<<" "<<it->rec.left_bottle.y<<" )";
-        cout<<"as:"<<it->as.width<<"  "<< it->as.height<<"  ("<<it->as.left_bottle.x;
-        cout<<" "<<it->as.left_bottle.y<<" )"<<endl;
+        cout<<"rec:"<<it->irec->width<<"  "<< it->irec->height<<"  ("<<it->irec->left_bottle.x;
+        cout<<" "<<it->irec->left_bottle.y<<" )";
+        cout<<"as:"<<it->ias->width<<"  "<< it->ias->height<<"  ("<<it->ias->left_bottle.x;
+        cout<<" "<<it->ias->left_bottle.y<<" )"<<endl;
     }
 }
 
@@ -1026,7 +1027,7 @@ int backtrack2()
     fit_degree fd;
     rectangle rec;
     action_space as;
-    conner_action ac(fd,rec,as);
+    conner_action ac(fd,i2chonse_rec,i2chonse_as);
     
     
     while(chose_as_rec())
@@ -1038,14 +1039,15 @@ int backtrack2()
                  it = g_v_action_kopt.begin();
              it != g_v_action_kopt.end() ; ++it)
         {
-            chonse_biggest_time_rec(i2chonse_rec,it->rec);
-            
-            if(i2chonse_rec == g_v_rec_undo.end())
-                cout<<"not find"<<endl;
-            *i2chonse_rec = it->rec;
-            i2chonse_as = find(g_v_as.begin(),g_v_as.end(),it->as);
+            //chonse_biggest_time_rec(i2chonse_rec,it->rec);
+            // if(i2chonse_rec == g_v_rec_undo.end())
+            //     cout<<"not find"<<endl;
+            // *i2chonse_rec = it->rec;
+            // i2chonse_as = find(g_v_as.begin(),g_v_as.end(),it->as);
+            print_kopt();
+            print_data();
             data_push();
-            update_data(i2chonse_rec,i2chonse_as);
+            update_data(it->irec,it->ias);
             area = backtrack2();
             if(area == g_as.get_area() || g_v_rec_undo.size()==0)
                 return area;
@@ -1058,9 +1060,9 @@ int backtrack2()
         }
         if (max_area == g_as.get_area())
             break;
-        chonse_biggest_time_rec(i2chonse_rec,ac.rec);
-        i2chonse_as = find(g_v_as.begin(),g_v_as.end(),ac.as);
-        update_data(i2chonse_rec,i2chonse_as);
+        // chonse_biggest_time_rec(i2chonse_rec,ac.rec);
+        // i2chonse_as = find(g_v_as.begin(),g_v_as.end(),ac.as);
+        update_data(ac.irec,ac.ias);
     }
     area = get_area();
     return area;

@@ -515,27 +515,49 @@ public:
     vector<action_space>::iterator ias;
     conner_action(const fit_degree & _fd,vector<rectangle>::iterator _irec,vector<action_space>::iterator  _ias)
         :fd(_fd),irec(_irec),ias(_ias){    }
+    // bool operator<(const conner_action & _ac)const
+    //     {
+    //         if (irec->time < _ac.irec->time)
+    //             return 1;
+    //         else if (irec->time == _ac.irec->time)
+    //         {
+    //             if (fd < _ac.fd)
+    //                 return 1;
+    //             else if (fd == _ac.fd)
+    //             {
+    //                 if (*irec < *(_ac.irec))
+    //                     return 1;
+    //                 else
+    //                     return 0 ;
+    //             }
+    //             else
+    //                 return 0;
+    //         }
+    //         else
+    //             return 0;
+    //     }
     bool operator<(const conner_action & _ac)const
         {
-            if (irec->time < _ac.irec->time)
+            if (fd < _ac.fd)
                 return 1;
-            else if (irec->time == _ac.irec->time)
+            else if (fd == _ac.fd)
             {
-                if (fd < _ac.fd)
+                if (*irec < *(_ac.irec))
                     return 1;
-                else if (fd == _ac.fd)
+                else if(*irec == *(_ac.irec))
                 {
-                    if (*irec < *(_ac.irec))
+                    if (irec->time < _ac.irec->time)
                         return 1;
                     else
-                        return 0 ;
+                        return 0;
                 }
                 else
-                    return 0;
+                    return 0 ;
             }
             else
                 return 0;
         }
+    
     bool operator ==(const conner_action &_ac)
         {
             if (fd == _ac.fd && irec->is_equal_withtime(*(_ac.irec))  && *ias == *(_ac.ias))

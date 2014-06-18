@@ -30,7 +30,7 @@ stack< vector<rectangle> > g_stk_v4rec_last;
 
 // 前k个最优的占角动作
 vector<conner_action> g_v_action_kopt;
-int  g_optnumber = 5;
+int  g_optnumber = 2;
 
 vector<Hline> g_v_hline; // 所有水平线
 vector<Vline> g_v_vline ; // 所有垂直线
@@ -836,12 +836,12 @@ void task_scheduling()
         // 如果本此调度的举行块含有上次未完成的，并且本次没有占满矩形框
         // 重新进行一次调度，因为调度的时候是优先调度了上次未完成的矩形块
         // 再次调度则将本次调度进来的同等考虑（已经包含了所有上次未完成的矩形块）
-        if (area != g_as.get_area() && last_unfinished_mark == 1)
-        {
-            g_v_rec_last_unfinished = g_v_rec_done;
-            init_data();
-            area = backtrack2();
-        }
+        // if (area != g_as.get_area() && last_unfinished_mark == 1)
+        // {
+        //     g_v_rec_last_unfinished = g_v_rec_done;
+        //     init_data();
+        //     area = backtrack2();
+        // }
         time_this = update_rec_status();
         number++;
         time_total += time_this;
@@ -1044,13 +1044,17 @@ int backtrack2()
             //     cout<<"not find"<<endl;
             // *i2chonse_rec = it->rec;
             // i2chonse_as = find(g_v_as.begin(),g_v_as.end(),it->as);
-            print_kopt();
-            print_data();
+            //print_kopt();
+            //print_data();
             data_push();
             update_data(it->irec,it->ias);
             area = backtrack2();
-            if(area == g_as.get_area() || g_v_rec_undo.size()==0)
+            if(area == g_as.get_area() || (g_v_rec_undo.size()==0) && g_v_rec_last_unfinished.size()==0)
+            {
+                cout<<"area rate:100%:"<<area<<endl;
                 return area;
+            }
+            
             data_pop();
             if(max_area < area)
             {

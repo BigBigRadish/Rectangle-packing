@@ -27,9 +27,9 @@ class fit_degree
 public:
     int k; // 贴边数
     int s; // 平整度
-    int j; // 紧凑度
-    int p; // 它贴边数
-    fit_degree():k(0),s(0),p(0),j(0){}
+    double j; // 本动作空间面积利用率
+    double p; // 贴边率
+    fit_degree():k(0),s(0),p(0.0),j(0.0){}
     bool operator< (const fit_degree & _fd)const
         {
             if(k < _fd.k)

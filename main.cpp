@@ -84,7 +84,7 @@ int calculate_fd_k(vector<rectangle>::iterator i2rec,
 int calculate_fd_s(vector<rectangle>::iterator i2rec,
                       vector<action_space>::iterator i2as);
 
-int calculate_fd_j(vector<rectangle>::iterator i2rec,
+double calculate_fd_j(vector<rectangle>::iterator i2rec,
                       vector<action_space>::iterator i2as);
 
 
@@ -379,12 +379,10 @@ int calculate_fd_s(vector<rectangle>::iterator i2rec,
      return 0-s;
 }
 
-int calculate_fd_j(vector<rectangle>::iterator i2rec,
+double calculate_fd_j(vector<rectangle>::iterator i2rec,
                    vector<action_space>::iterator i2as)
 {
-    int area_done = get_area();
-    int area_as = get_area_as();
-    return area_done + area_as;
+    return (double)i2rec->get_area()/(double)i2as->get_area();
 }
 
 // 计算它贴边数

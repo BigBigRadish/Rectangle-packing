@@ -25,6 +25,10 @@ const int DOWN_LINE = 3;
 class fit_degree
 {
 public:
+    int k; // 贴边数
+    int s; // 平整度
+    int j; // 紧凑度
+    int p; // 它贴边数
     fit_degree():k(0),s(0.0),p(0){}
     bool operator< (const fit_degree & _fd)const
         {
@@ -54,9 +58,7 @@ public:
                 return 1;
             return 0;
         }
-    int k; // 贴边数
-    int s; // 平整度
-    int p; // 它贴边数
+
     
 };
 
@@ -515,48 +517,48 @@ public:
     vector<action_space>::iterator ias;
     conner_action(const fit_degree & _fd,vector<rectangle>::iterator _irec,vector<action_space>::iterator  _ias)
         :fd(_fd),irec(_irec),ias(_ias){    }
-    // bool operator<(const conner_action & _ac)const
-    //     {
-    //         if (irec->time < _ac.irec->time)
-    //             return 1;
-    //         else if (irec->time == _ac.irec->time)
-    //         {
-    //             if (fd < _ac.fd)
-    //                 return 1;
-    //             else if (fd == _ac.fd)
-    //             {
-    //                 if (*irec < *(_ac.irec))
-    //                     return 1;
-    //                 else
-    //                     return 0 ;
-    //             }
-    //             else
-    //                 return 0;
-    //         }
-    //         else
-    //             return 0;
-    //     }
     bool operator<(const conner_action & _ac)const
         {
-            if (fd < _ac.fd)
+            if (irec->time < _ac.irec->time)
                 return 1;
-            else if (fd == _ac.fd)
+            else if (irec->time == _ac.irec->time)
             {
-                if (*irec < *(_ac.irec))
+                if (fd < _ac.fd)
                     return 1;
-                else if(*irec == *(_ac.irec))
+                else if (fd == _ac.fd)
                 {
-                    if (irec->time < _ac.irec->time)
+                    if (*irec < *(_ac.irec))
                         return 1;
                     else
-                        return 0;
+                        return 0 ;
                 }
                 else
-                    return 0 ;
+                    return 0;
             }
             else
                 return 0;
         }
+    // bool operator<(const conner_action & _ac)const
+    //     {
+    //         if (fd < _ac.fd)
+    //             return 1;
+    //         else if (fd == _ac.fd)
+    //         {
+    //             if (*irec < *(_ac.irec))
+    //                 return 1;
+    //             else if(*irec == *(_ac.irec))
+    //             {
+    //                 if (irec->time < _ac.irec->time)
+    //                     return 1;
+    //                 else
+    //                     return 0;
+    //             }
+    //             else
+    //                 return 0 ;
+    //         }
+    //         else
+    //             return 0;
+    //     }
     
     bool operator ==(const conner_action &_ac)
         {

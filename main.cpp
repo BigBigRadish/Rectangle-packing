@@ -30,7 +30,7 @@ stack< vector<rectangle> > g_stk_v4rec_last;
 
 // 前k个最优的占角动作
 vector<conner_action> g_v_action_kopt;
-int  g_optnumber = 2;
+int  g_optnumber = 10;
 
 vector<Hline> g_v_hline; // 所有水平线
 vector<Vline> g_v_vline ; // 所有垂直线
@@ -175,6 +175,9 @@ void data_pop();
 
 int backtrack2();
 
+int nobacktrack(vector<conner_action>::iterator it);
+
+
 bool conner_check(const conner & cn,int conner_type);
 
 
@@ -272,8 +275,8 @@ void remove_conner_blocked(rectangle & rec)
 bool chose_as_rec()
 {
     int backtrack_mark = 1;
-    if (g_v_rec_undo.size() == 0)
-        return false;
+    if (g_v_rec_undo.size() == 0 && g_v_rec_last_unfinished.size()==0)
+        return 0;
     vector<rectangle>::iterator i2rec = g_v_rec_undo.begin();
     vector<action_space>::iterator i2as = g_v_as.begin();
     fit_degree fd;
@@ -317,7 +320,6 @@ bool chose_as_rec()
             }
         }
     }
-    
     return finded ;
 }
 
@@ -346,20 +348,20 @@ int calculate_fd_s(vector<rectangle>::iterator i2rec,
     action_space as_chonse;
     // backup
     data_push();
-    
+
     rec_chonse = *i2rec;
     as_chonse = *i2as;
     find_conflict_as(*i2rec);
     remove_conner_blocked(rec_chonse);
     generate_conners(*i2rec);
     update_action_space();
-//    g_v_rec_done.push_back(*i2rec);
-//    g_v_rec_undo.erase(i2rec);
     int s = g_v_as.size();
+
     // restore
     data_pop();
     return 0-s;
 }
+
 
 // 计算它贴边数
 int  calculate_fd_p(vector<rectangle>::iterator i2rec,
@@ -828,20 +830,20 @@ void task_scheduling()
     while(g_v_rec_undo.size()!=0 || g_v_rec_last_unfinished.size()!=0)
     {
         // 用回溯法完成一次调度
-        if (g_v_rec_last_unfinished.size()!=0)
-            last_unfinished_mark = 1;
-        else
-            last_unfinished_mark = 0;
+        // if (g_v_rec_last_unfinished.size()!=0)
+        //     last_unfinished_mark = 1;
+        // else
+        //     last_unfinished_mark = 0;
         area = backtrack2();
         // 如果本此调度的举行块含有上次未完成的，并且本次没有占满矩形框
         // 重新进行一次调度，因为调度的时候是优先调度了上次未完成的矩形块
         // 再次调度则将本次调度进来的同等考虑（已经包含了所有上次未完成的矩形块）
-        // if (area != g_as.get_area() && last_unfinished_mark == 1)
-        // {
-        //     g_v_rec_last_unfinished = g_v_rec_done;
-        //     init_data();
-        //     area = backtrack2();
-        // }
+        if (area != g_as.get_area() )// && last_unfinished_mark == 1
+        {
+            g_v_rec_last_unfinished = g_v_rec_done;
+            init_data();
+            area = backtrack2();
+        }
         time_this = update_rec_status();
         number++;
         time_total += time_this;
@@ -972,13 +974,19 @@ void print_data()
     cout<<"-----------------begin-------------------------------"<<endl;
     cout<<"done info:"<<endl;
     for (vector<rectangle>::iterator it = g_v_rec_done.begin(); it != g_v_rec_done.end(); it++)
-        cout<<it->width<<"   "<<it->height<<"     ("<<it->left_bottle.x<<" , "<<
+        cout<<"id:"<<it->id<<" "<<it->width<<"   "<<it->height<<"     ("<<it->left_bottle.x<<" , "<<
             it->left_bottle.y<<")"<<"    "<<it->reverse_mode<<endl;
     
     cout<<" undo info:"<<endl;
     for (vector<rectangle>::iterator it = g_v_rec_undo.begin(); it != g_v_rec_undo.end(); it++)
-        cout<<it->width<<"   "<<it->height<<"     ("<<it->left_bottle.x<<" , "<<
+        cout<<"id:"<<it->id<<" "<<it->width<<"   "<<it->height<<"     ("<<it->left_bottle.x<<" , "<<
             it->left_bottle.y<<")"<<"    "<<it->reverse_mode<<endl;
+    cout<<" last_un_finished info:"<<endl;
+    for (vector<rectangle>::iterator it = g_v_rec_last_unfinished.begin();
+         it != g_v_rec_last_unfinished.end(); it++)
+        cout<<"id:"<<it->id<<" "<<it->width<<"   "<<it->height<<"     ("<<it->left_bottle.x<<" , "<<
+            it->left_bottle.y<<")"<<"    "<<it->reverse_mode<<endl;
+    
     cout<<" as info size:"<<g_v_as.size()<<endl;
     for (vector<action_space>::iterator it = g_v_as.begin(); it != g_v_as.end(); it++)
         cout<<it->width<<"   "<<it->height<<"     ("<<it->left_bottle.x<<" , "<<
@@ -1029,7 +1037,6 @@ int backtrack2()
     action_space as;
     conner_action ac(fd,i2chonse_rec,i2chonse_as);
     
-    
     while(chose_as_rec())
     {
         // 反向排序，这样g_v_action中数据按从大到小排序
@@ -1039,33 +1046,19 @@ int backtrack2()
                  it = g_v_action_kopt.begin();
              it != g_v_action_kopt.end() ; ++it)
         {
-            //chonse_biggest_time_rec(i2chonse_rec,it->rec);
-            // if(i2chonse_rec == g_v_rec_undo.end())
-            //     cout<<"not find"<<endl;
-            // *i2chonse_rec = it->rec;
-            // i2chonse_as = find(g_v_as.begin(),g_v_as.end(),it->as);
-            //print_kopt();
-            //print_data();
             data_push();
-            update_data(it->irec,it->ias);
-            area = backtrack2();
+            area = nobacktrack(it);
             if(area == g_as.get_area() || (g_v_rec_undo.size()==0) && g_v_rec_last_unfinished.size()==0)
             {
-                cout<<"area rate:100%:"<<area<<endl;
                 return area;
             }
-            
             data_pop();
-            if(max_area < area)
+            if (max_area < area)
             {
                 max_area = area;
                 ac = *it;
             }
         }
-        if (max_area == g_as.get_area())
-            break;
-        // chonse_biggest_time_rec(i2chonse_rec,ac.rec);
-        // i2chonse_as = find(g_v_as.begin(),g_v_as.end(),ac.as);
         update_data(ac.irec,ac.ias);
     }
     area = get_area();
@@ -1095,7 +1088,7 @@ void data_pop()
 
     g_v_rec_undo = g_stk_v4rec_undo.top();
     g_stk_v4rec_undo.pop();
-
+    
     g_v_rec_done = g_stk_v4rec_done.top();
     g_stk_v4rec_done.pop();
 
@@ -1436,4 +1429,20 @@ void hline_insert(const Hline & hl)
     for (ith; ith!= iloch; --ith)
         *ith = *(ith-1);
     *ith = hl;
+}
+
+
+int nobacktrack(vector<conner_action>::iterator it)
+{
+    int g_optnumber_back = g_optnumber;
+    g_optnumber = 1;
+    update_data(it->irec,it->ias);
+    while(chose_as_rec())
+    {
+        it = g_v_action_kopt.begin();
+        update_data(it->irec,it->ias);
+    }
+    int area = get_area();
+    g_optnumber = g_optnumber_back;
+    return area;
 }

@@ -50,7 +50,6 @@ set<conner> g_s_conner_blocked; // 记录当前被屏蔽的角
 set<conner> g_s_conner2space; // 每次新生成的角,新动作空间从这些角产生
 
 // 
-
 action_space g_as(point(0,0),0,0);
 ofstream ofile("output.txt");
 
@@ -134,21 +133,23 @@ void generate_conners(const rectangle& rec);
 // 并且把这几个动作空间的实角添加到 生成动作空间的角集合中
 void find_conflict_as(const rectangle & rec);
 
-//
+//判断是否冲突
 bool is_conflicted(const action_space& as);
 
 // 更新动作空间
 void update_action_space();
 
-    
+
+// 更新占角动作
 void update_kopt( const fit_degree & fd,
                   vector<rectangle>::iterator  irec,
                   vector<action_space>::iterator  ias);
 
+// 已经放入的举行块面积和
 int get_area();
 
+// 动作空间面积和
 int get_area_as();
-
 
 
 // 初始化动作空间和线信息
@@ -159,42 +160,51 @@ void init_data();
 void update_data(vector<rectangle>::iterator  i2chonse_rec,
                  vector<action_space>::iterator i2chonse_as);
 
-
+// 任务调度算法
 void task_scheduling();
 
+// 一次调度完成后，更新矩形块信息
 int update_rec_status();
 
-
+// 打印调度信息
 void print_schedule(int time,int number);
 
 
-// 初始化操作
+// 初始化操作,读入矩形块数据
 void init();
 
 // 输出最后数据
 void output_data(int number, int time);
 
+// 打印前k个占角动作
 void print_kopt();
 
+// 保存数据
 void data_push();
 
+// 恢复数据
 void data_pop();
 
+// 进行一次packing
 int backtrack2();
 
+// packing算法，相当与a0
 int nobacktrack(vector<conner_action>::iterator it);
 
-
+// 实角检测,如果是实角，则返回1
 bool conner_check(const conner & cn,int conner_type);
 
 
 //在待加工矩形块集合中，选择加工时间最长的和 rec相等的举行块
 void chonse_biggest_time_rec(vector<rectangle>::iterator &i2rec,const rectangle & rec);
 
-
+// 判断两个矩形块是否相等，包括加工时间
 bool rec_equal_test_withtime(const rectangle &rec1, const rectangle &rec2);
 
+// 新的垂直线插入
 void vline_insert(const Vline & vl );
+
+// 新的水平线插入
 void hline_insert(const Hline & hl);
 
 

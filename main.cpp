@@ -85,6 +85,9 @@ int calculate_fd_k(vector<rectangle>::iterator i2rec,
 int calculate_fd_s(vector<rectangle>::iterator i2rec,
                       vector<action_space>::iterator i2as);
 
+int calculate_fd_j(vector<rectangle>::iterator i2rec,
+                      vector<action_space>::iterator i2as);
+
 
 // 求出木块 i2rec 在动作空间i2as的4个位置中最忧位置
 // 并且 i2rec 的值已经被更新
@@ -143,6 +146,10 @@ void update_kopt( const fit_degree & fd,
                   vector<action_space>::iterator  ias);
 
 int get_area();
+
+int get_area_as();
+
+
 
 // 初始化动作空间和线信息
 void init_data();
@@ -346,22 +353,29 @@ int calculate_fd_s(vector<rectangle>::iterator i2rec,
 {
     rectangle rec_chonse;
     action_space as_chonse;
-    // backup
-    data_push();
-
+ 
     rec_chonse = *i2rec;
     as_chonse = *i2as;
     find_conflict_as(*i2rec);
     remove_conner_blocked(rec_chonse);
     generate_conners(*i2rec);
     update_action_space();
+    g_v_rec_done.push_back(*i2rec);
+    if (!g_v_rec_last_unfinished.empty())
+        g_v_rec_last_unfinished.erase(i2rec);
+    else
+        g_v_rec_undo.erase(i2rec);
     int s = g_v_as.size();
-
-    // restore
-    data_pop();
-    return 0-s;
+     return 0-s;
 }
 
+int calculate_fd_j(vector<rectangle>::iterator i2rec,
+                   vector<action_space>::iterator i2as)
+{
+    int area_done = get_area();
+    int area_as = get_area_as();
+    return area_done + area_as;
+}
 
 // 计算它贴边数
 int  calculate_fd_p(vector<rectangle>::iterator i2rec,
@@ -421,7 +435,12 @@ void calculate_fd(vector<rectangle>:: iterator i2rec,
                   fit_degree & fd)
 {
     fd.k = calculate_fd_k(i2rec,i2as);
+    // backup
+    data_push();
     fd.s = calculate_fd_s(i2rec,i2as);
+    fd.j = calculate_fd_j(i2rec,i2as);
+    // restore
+    data_pop();
     fd.p = calculate_fd_p(i2rec,i2as);
 }
 
@@ -797,6 +816,15 @@ int get_area()
     return area;
 }
 
+int get_area_as()
+{
+    int area=0;
+    for (vector<action_space>::iterator it = g_v_as.begin() ;
+         it != g_v_as.end() ; ++it)
+        area += it->get_area();
+    return area;
+}
+
 
 // 选择最优的小木块和动作空间后，完成一次占角，更新数据
 void update_data(vector<rectangle>::iterator  i2chonse_rec,
@@ -811,8 +839,6 @@ void update_data(vector<rectangle>::iterator  i2chonse_rec,
         g_v_rec_last_unfinished.erase(i2chonse_rec);
     else
         g_v_rec_undo.erase(i2chonse_rec);
-
-
 }
 
 
@@ -1446,3 +1472,4 @@ int nobacktrack(vector<conner_action>::iterator it)
     g_optnumber = g_optnumber_back;
     return area;
 }
+

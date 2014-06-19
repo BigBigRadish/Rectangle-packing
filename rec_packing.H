@@ -29,7 +29,7 @@ public:
     int s; // 平整度
     int j; // 紧凑度
     int p; // 它贴边数
-    fit_degree():k(0),s(0.0),p(0){}
+    fit_degree():k(0),s(0),p(0),j(0){}
     bool operator< (const fit_degree & _fd)const
         {
             if(k < _fd.k)
@@ -40,8 +40,15 @@ public:
                     return 1;
                 else if(s == _fd.s)
                 {
-                    if(p < _fd.s)
+                    if (j < _fd.j)
                         return 1;
+                    else if (j == _fd.j)
+                    {
+                        if(p < _fd.p)
+                            return 1;
+                        else
+                            return 0;
+                    }
                     else
                         return 0;
                 }

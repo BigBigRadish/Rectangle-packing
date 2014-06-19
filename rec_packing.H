@@ -182,6 +182,7 @@ public:
         pt_top = _vl.pt_top;
         isblock = _vl.isblock;
         line_type = _vl.line_type;
+        return *this;
     }
     // 长度
     int get_length() const {return pt_top.y - pt_bottle.y;   } 
@@ -451,6 +452,7 @@ public:
             width = as.width;
             height = as.height;
             place_type = as.place_type;
+            return *this;
         }
     
     bool operator==(const action_space & _as) const

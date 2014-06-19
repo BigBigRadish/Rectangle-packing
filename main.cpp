@@ -428,7 +428,7 @@ int  calculate_fd_p(vector<rectangle>::iterator i2rec,
         if (right_line.conflict(*ivline) && rightline_mark == 0)
         {
             fd_p++;
-            rightline_mark == 0;
+            rightline_mark = 0;
         }
         
     }
@@ -1480,4 +1480,3 @@ int nobacktrack(vector<conner_action>::iterator it)
     g_optnumber = g_optnumber_back;
     return area;
 }
-

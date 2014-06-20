@@ -291,7 +291,7 @@ void remove_conner_blocked(rectangle & rec)
 // 选择动作空间和小木块
 bool chose_as_rec()
 {
-    g_v_action_kopt.clear();
+    int backtrack_mark = 1;
     if (g_v_rec_undo.size() == 0 && g_v_rec_last_unfinished.size()==0)
         return 0;
     vector<rectangle>::iterator i2rec = g_v_rec_undo.begin();
@@ -309,7 +309,12 @@ bool chose_as_rec()
                     continue;
                 finded = 1;;
                 // 
-                //update_kopt(fd,i2rec,i2as) ;
+                if (backtrack_mark == 1)
+                {
+                    g_v_action_kopt.clear();
+                    backtrack_mark = 0;
+                }
+                update_kopt(fd,i2rec,i2as) ;
             }
         }
     }
@@ -322,7 +327,13 @@ bool chose_as_rec()
                 if(!max_fd_of8values(i2rec,i2as,fd))
                     continue;
                 finded = 1;;
-                //update_kopt(fd,i2rec,i2as) ;
+                // 
+                if (backtrack_mark == 1)
+                {
+                    g_v_action_kopt.clear();
+                    backtrack_mark = 0;
+                }
+                update_kopt(fd,i2rec,i2as) ;
             }
         }
     }
@@ -457,43 +468,75 @@ bool  max_fd_of4values(const vector<rectangle>:: iterator & i2rec,
     
     fit_degree fd_max ; // 本动作空间针对当前木块目前最大的fd
     rectangle rec_op = *i2rec; // 当前最优的小木块
-    bool mark_finded = 0;
+
     // left bottle 是实角
     if(g_s_conner.count(conner(i2as->left_bottle)))
     {
-        mark_finded = 1;
         i2rec->set_ordinate_lb(i2as->left_bottle);
         calculate_fd(i2rec,i2as,fd_max);
-        update_kopt(fd_max,i2rec,i2as);
+        i2as->place_type = LEFT_BOTTLE ;
+        rec_op = *i2rec;
     }
 
     // left top 是实角
     if (g_s_conner.count(conner(i2as->left_top())))
     {
-        mark_finded = 1;
         i2rec->set_ordinate_lt(i2as->left_top() );
-        calculate_fd(i2rec,i2as,fd_max);
-        update_kopt(fd_max,i2rec,i2as);
+        calculate_fd(i2rec,i2as,fd);
+        if (fd_max < fd || (fd_max == fd &&   *i2rec > rec_op) )
+        {
+            fd_max = fd ;
+            rec_op = *i2rec;
+            i2as->place_type = LEFT_TOP ;
+        }   
     }
         
     // right bottle 是实角
     if (g_s_conner.count(conner(i2as->right_bottle())))
     {
-        mark_finded = 1;
         i2rec->set_ordinate_rb(i2as->right_bottle() );
-        calculate_fd(i2rec,i2as,fd_max);
-        update_kopt(fd_max,i2rec,i2as);
+        calculate_fd(i2rec,i2as,fd);
+        if (fd_max < fd || (fd_max == fd &&  *i2rec > rec_op ) )
+        {
+            fd_max = fd ;
+            rec_op = *i2rec;
+            i2as->place_type = RIGHT_BOTTLE ;
+        }
     }
 
     // right top 是 实角
     if (g_s_conner.count(conner(i2as->right_top())))
     {
-        mark_finded = 1;
         i2rec->set_ordinate_rt(i2as->right_top() );
-        calculate_fd(i2rec,i2as,fd_max);
-        update_kopt(fd_max,i2rec,i2as);
+        calculate_fd(i2rec,i2as,fd);
+        if (fd_max < fd || (fd_max == fd &&   *i2rec > rec_op) )
+        {
+            fd_max = fd ;
+            rec_op = *i2rec;
+            i2as->place_type = RIGHT_TOP ;
+        }
     }
-    return mark_finded;
+    fd_max = fd;
+    // 根据放置方式，重新定小方块的坐标
+    switch( i2as->place_type)
+    {
+    case LEFT_BOTTLE:
+        i2rec->set_ordinate_lb(i2as->left_bottle);break;
+    case LEFT_TOP:
+        i2rec->set_ordinate_lt(i2as->left_top() );break;
+    case RIGHT_BOTTLE:
+        i2rec->set_ordinate_rb(i2as->right_bottle() );break;
+    case RIGHT_TOP:
+        i2rec->set_ordinate_rt(i2as->right_top() );break;
+    default:
+        cout<<"error";
+        cout<<"rec:"<<i2rec->width<<" "<<i2rec->height;
+        cout<<"  (:"<<i2rec->left_bottle.x<<" "<<i2rec->left_bottle.y<<" )";
+        cout<<"  as:"<<i2as->width<<" "<<i2as->height;
+        cout<<"  (:"<<i2as->left_bottle.x<<" "<<i2as->left_bottle.y<<" )"<<endl;
+
+    }
+    return 1;
 }
 
 // 计算小矩形在动作空间 i2as 四个角的fd，包括水平和垂直方向
@@ -1437,3 +1480,4 @@ int nobacktrack(vector<conner_action>::iterator it)
     g_optnumber = g_optnumber_back;
     return area;
 }
+
